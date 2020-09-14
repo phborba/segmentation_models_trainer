@@ -20,7 +20,8 @@
 """
 
 import unittest
-from segmentation_models_trainer.core.experiment_builder.experiment import Experiment
+import segmentation_models_trainer as smt
+from smt.experiment_builder.experiment import Experiment
 
 class Test_TestExperiment(unittest.TestCase):
 
@@ -39,4 +40,19 @@ class Test_TestExperiment(unittest.TestCase):
         )
         self.assertEqual(
             experiment.epochs, 2
+        )
+        self.assertEqual(
+            experiment.log_path, '/data/test'
+        )
+        self.assertEqual(
+            experiment.checkpoint_frequency, 10
+        )
+        self.assertEqual(
+            experiment.warmup_epochs, 2
+        )
+        self.assertEqual(
+            experiment.batch_size, 16
+        )
+        self.assertEqual(
+            experiment.use_multiple_gpus, False
         )
