@@ -20,39 +20,54 @@
 """
 
 import unittest
-import segmentation_models_trainer as smt
-from smt.experiment_builder.experiment import Experiment
+import json
+from segmentation_models_trainer.experiment_builder.experiment import Experiment
 
 class Test_TestExperiment(unittest.TestCase):
+    experiment = Experiment(
+        name='test',
+        epochs=2,
+        log_path='/data/test',
+        checkpoint_frequency=10,
+        warmup_epochs=2,
+        use_multiple_gpus=False
+    )
+    json_dict = json.loads("""{"name": "test", "epochs": 2, "log_path": "/data/test", "checkpoint_frequency": 10, "warmup_epochs": 2, "use_multiple_gpus": false}""")
 
     def test_create_instance(self):
-        experiment = Experiment(
-            name='test',
-            epochs=2,
-            log_path='/data/test',
-            checkpoint_frequency=10,
-            warmup_epochs=2,
-            batch_size=16,
-            use_multiple_gpus=False
+        """[summary]
+        Tests instance creation
+        """          
+        self.assertEqual(
+            self.experiment.name, 'test'
         )
         self.assertEqual(
-            experiment.name, 'test'
+            self.experiment.epochs, 2
         )
         self.assertEqual(
-            experiment.epochs, 2
+            self.experiment.log_path, '/data/test'
         )
         self.assertEqual(
-            experiment.log_path, '/data/test'
+            self.experiment.checkpoint_frequency, 10
         )
         self.assertEqual(
-            experiment.checkpoint_frequency, 10
+            self.experiment.warmup_epochs, 2
         )
         self.assertEqual(
-            experiment.warmup_epochs, 2
+            self.experiment.use_multiple_gpus, False
+        )
+    
+    def test_export_instance(self):
+        self.assertEqual(
+            self.experiment.to_dict(),
+            self.json_dict
+        )
+    
+    def test_import_instance(self):
+        new_experiment = Experiment.from_dict(
+            self.json_dict
         )
         self.assertEqual(
-            experiment.batch_size, 16
-        )
-        self.assertEqual(
-            experiment.use_multiple_gpus, False
+            self.experiment,
+            new_experiment
         )
