@@ -119,12 +119,10 @@ class Experiment(JsonSchemaMixin):
         )
         model = train_model(
             epochs=self.warmup_epochs,
-            save_weights_path=warmup_path,
+            save_weights_path=final_save_path,
             encoder_freeze=False,
             load_weights=warmup_path if self.warmup_epochs > 0 else None
         )
-        
-        model.save(final_save_path)
     
     def create_data_folders(self):
         DATA_DIR = self.test_and_create_folder(self.experiment_data_path)
