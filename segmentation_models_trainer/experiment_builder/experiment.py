@@ -18,37 +18,173 @@
  *                                                                         *
  ****
 """
-
+import tensorflow as tf
+import segmentation_models as sm
+import os
+import numpy as np
 from dataclasses import dataclass
 from dataclasses_jsonschema import JsonSchemaMixin
+from segmentation_models_trainer.model_builder.segmentation_model import SegmentationModel
+from segmentation_models_trainer.hyperparameter_builder.hyperparameters import Hyperparameters
+from segmentation_models_trainer.dataset_loader.dataset import Dataset
 
 @dataclass
 class Experiment(JsonSchemaMixin):
+    #TODO add loss field
+    #TODO add metrics
     name: str
     epochs: int
-    log_path: str
+    experiment_data_path: str
     checkpoint_frequency: int
     warmup_epochs: int
     use_multiple_gpus: bool
+    hyperparameters: Hyperparameters
+    train_dataset: Dataset
+    test_dataset: Dataset
+    model: SegmentationModel
 
-    def __eq__(self, other):
-        if other.__class__ is not self.__class__:
-            return NotImplemented
-        return (
-                self.name,
-                self.epochs,
-                self.log_path,
-                self.checkpoint_frequency,
-                self.warmup_epochs,
-                self.use_multiple_gpus
-            ) == (
-                other.name,
-                other.epochs,
-                other.log_path,
-                other.checkpoint_frequency,
-                other.warmup_epochs,
-                other.use_multiple_gpus
+    def train(self):
+        gpu_devices = tf.config.experimental.list_physical_devices('GPU')
+        for device in gpu_devices:
+            tf.config.experimental.set_memory_growth(device, True)
+        #using XLA
+        tf.config.optimizer.set_jit(True)
+        strategy = tf.distribute.MirroredStrategy()
+
+        self.create_data_folders()
+
+        BATCH_SIZE = self.hyperparameters.batch_size * strategy.num_replicas_in_sync \
+            if self.use_multiple_gpus else self.hyperparameters.batch_size
+        n_classes = self.train_dataset.n_classes
+        input_shape = self.train_dataset.get_img_input_shape()
+        
+        train_ds = self.train_dataset.get_tf_dataset(BATCH_SIZE)
+        test_ds = self.test_dataset.get_tf_dataset(BATCH_SIZE)
+
+        training_steps_per_epoch = int( np.ceil(self.train_dataset.dataset_size / BATCH_SIZE) )
+        test_steps_per_epoch = int( np.ceil(self.test_dataset.dataset_size / BATCH_SIZE) )
+
+        if self.warmup_epochs > 0:
+            warmup_path = self.train_warmup(
+                strategy,
+                n_classes,
+                input_shape,
+                train_ds,
+                test_ds,
+                training_steps_per_epoch,
+                test_steps_per_epoch
             )
+        with strategy.scope():
+            model = self.model.get_model(
+                n_classes,
+                encoder_freeze=False,
+                input_shape=input_shape
+            )
+            opt = self.hyperparameters.optimizer.tf_object
+            #TODO metrics and loss fields into compile
+            model.compile(
+                opt,
+                loss=sm.losses.bce_jaccard_loss,
+                metrics=[
+                    'accuracy',
+                    'binary_crossentropy',
+                    sm.metrics.iou_score,
+                    sm.metrics.precision,
+                    sm.metrics.recall,
+                    sm.metrics.f1_score,
+                    sm.metrics.f2_score
+                ]
+            )
+            if self.warmup_epochs > 0:
+                model.load_weights(warmup_path)
+        model.fit(
+            train_ds,
+            batch_size=BATCH_SIZE,
+            steps_per_epoch=training_steps_per_epoch,
+            epochs=self.epochs,
+            validation_data=test_ds,
+            validation_steps=test_steps_per_epoch,
+            callbacks=[]
+        )
+        final_save_path = os.path.join(
+            self.SAVE_PATH,
+            'experiment_{name}_{epochs}_epochs.h5'.format(
+                name=self.name,
+                epochs=self.epochs
+            )
+        )
+        model.save(final_save_path)
+
+    def train_warmup(self, strategy, n_classes, input_shape,\
+        train_ds, test_ds, training_steps_per_epoch, test_steps_per_epoch):
+        with strategy.scope():
+            model = self.model.get_model(
+                n_classes,
+                encoder_freeze=True,
+                input_shape=input_shape
+            )
+            opt = self.hyperparameters.optimizer.tf_object
+            #TODO metrics and loss fields into compile
+            model.compile(
+                opt,
+                loss=sm.losses.bce_jaccard_loss,
+                metrics=[
+                    'accuracy',
+                    'binary_crossentropy',
+                    sm.metrics.iou_score,
+                    sm.metrics.precision,
+                    sm.metrics.recall,
+                    sm.metrics.f1_score,
+                    sm.metrics.f2_score
+                ]
+            )
+        model.fit(
+            train_ds,
+            batch_size=BATCH_SIZE,
+            steps_per_epoch=training_steps_per_epoch,
+            epochs=self.warmup_epochs,
+            validation_data=test_ds,
+            validation_steps=test_steps_per_epoch,
+            callbacks=[]
+        )
+        warmup_path = os.path.join(
+            self.SAVE_PATH,
+            'warmup_experiment_{name}.h5'.format(name=self.name)
+        )
+        model.save_weights(
+            warmup_path
+        )
+        return warmup_path
+
+    
+    def create_data_folders(self):
+        DATA_DIR = self.test_and_create_folder(self.experiment_data_path)
+        self.TRAIN_CACHE = self.test_and_create_folder(
+            os.path.join(DATA_DIR, 'cache', 'train_cache')
+        )
+        self.TEST_CACHE = self.test_and_create_folder(
+            os.path.join(DATA_DIR, 'cache', 'train_cache')
+        )
+        self.LOG_PATH = self.test_and_create_folder(
+            os.path.join(DATA_DIR,'logs', 'scalars')
+        )
+        self.CHECKPOINT_PATH = self.test_and_create_folder(
+            os.path.join(DATA_DIR, 'logs', 'checkpoints')
+        )
+        self.SAVE_PATH = self.test_and_create_folder(
+            os.path.join(DATA_DIR, 'saved_models')
+        )
+        self.REPORT_DIR = self.test_and_create_folder(
+            os.path.join(DATA_DIR, 'report_img')
+        )
+
+    @staticmethod
+    def test_and_create_folder(path):
+        if os.path.exists(path):
+            return path
+        os.makedirs(path, exist_ok=True)
+        return path
+        
 
 
 @dataclass
@@ -56,17 +192,35 @@ class Callbacks(JsonSchemaMixin):
     name: str
     keras_callback: str
 
+@dataclass
+class Metric(JsonSchemaMixin):
+    name: str
+
 if __name__ == "__main__":
-    import pprint
     import json
-    pp = pprint.PrettyPrinter(indent=4)
-    experiment = Experiment(
-        name='test',
-        epochs=2,
-        log_path='/data/test',
-        checkpoint_frequency=10,
-        warmup_epochs=2,
-        use_multiple_gpus=False
+    experiment = Experiment.from_dict(
+        {
+            'name' : "test",
+            'epochs' : 2,
+            'experiment_data_path' : "/data/test",
+            'checkpoint_frequency' : 10,
+            'warmup_epochs' : 2,
+            'use_multiple_gpus' : False,
+            'hyperparameters' : {
+                'batch_size' : 16,
+                'optimizer' : {
+                    'name' : "Adam",
+                    'config' : {
+                        'learning_rate' : 0.01
+                    }
+                }
+            },
+            'train_dataset' : json.loads('{"name": "train_ds", "file_path": "/data/train_ds.csv", "n_classes": 1, "dataset_size": 1000, "augmentation_list": [{"name": "random_crop", "parameters": {"crop_width": 256, "crop_height": 256}}, {"name": "per_image_standardization", "parameters": {}}], "cache": true, "shuffle": true, "shuffle_buffer_size": 10000, "shuffle_csv": true, "ignore_errors": true, "num_paralel_reads": 4, "img_dtype": "float32", "img_format": "png", "img_width": 256, "img_length": 256, "img_bands": 3, "mask_bands": 1, "use_ds_width_len": false, "autotune": -1, "distributed_training": false}'),
+
+            'test_dataset' : json.loads('{"name": "test_ds", "file_path": "/data/test_ds.csv", "n_classes": 1, "dataset_size": 1000, "augmentation_list": [{"name": "random_crop", "parameters": {"crop_width": 256, "crop_height": 256}}, {"name": "per_image_standardization", "parameters": {}}], "cache": true, "shuffle": true, "shuffle_buffer_size": 10000, "shuffle_csv": true, "ignore_errors": true, "num_paralel_reads": 4, "img_dtype": "float32", "img_format": "png", "img_width": 256, "img_length": 256, "img_bands": 3, "mask_bands": 1, "use_ds_width_len": false, "autotune": -1, "distributed_training": false}'),
+
+            'model' : json.loads('{"description": "test case", "backbone": "resnet18", "architecture": "Unet", "activation": "sigmoid", "use_imagenet_weights": true}')
+        }
     )
-    pp.pprint(experiment.json_schema())
-    print(json.dumps(experiment.to_dict()))
+
+    print(experiment.to_json())

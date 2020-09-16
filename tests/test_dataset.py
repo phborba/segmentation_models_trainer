@@ -47,9 +47,10 @@ class Test_TestDataset(unittest.TestCase):
         name='test',
         file_path='/data/test',
         n_classes=1,
+        dataset_size=1000,
         augmentation_list=aug_list
     )
-    json_dict = json.loads('{"name": "test", "file_path": "/data/test", "n_classes": 1, "augmentation_list": [{"name": "random_crop", "parameters": {"crop_width": 256, "crop_height": 256}}, {"name": "per_image_standardization", "parameters": {}}], "cache": true, "shuffle": true, "shuffle_buffer_size": 10000, "shuffle_csv": true, "ignore_errors": true, "num_paralel_reads": 4, "img_dtype": "float32", "img_format": "png", "img_width": 256, "img_length": 256, "use_ds_width_len": false, "autotune": -1, "distributed_training": false}')
+    json_dict = json.loads('{"name": "test", "file_path": "/data/test", "n_classes": 1, "dataset_size": 1000, "augmentation_list": [{"name": "random_crop", "parameters": {"crop_width": 256, "crop_height": 256}}, {"name": "per_image_standardization", "parameters": {}}], "cache": true, "shuffle": true, "shuffle_buffer_size": 10000, "shuffle_csv": true, "ignore_errors": true, "num_paralel_reads": 4, "img_dtype": "float32", "img_format": "png", "img_width": 256, "img_length": 256, "img_bands": 3, "mask_bands": 1, "use_ds_width_len": false, "autotune": -1, "distributed_training": false}')
 
     def test_create_instance(self):
         """[summary]

@@ -30,7 +30,8 @@ from segmentation_models_trainer.hyperparameter_builder.optimizer import \
 class Test_TestHyperparameters(unittest.TestCase):
     opt = Optimizer(name='Adam',config={'learning_rate':0.01})
     hp = Hyperparameters(batch_size=16, optimizer=opt)
-    json_text = '''{"name": "Adam", "config": {"learning_rate": 0.01}}'''
+    opt_json_text = '''{"name": "Adam", "config": {"learning_rate": 0.01}}'''
+    hp_json_text = '{"batch_size": 16, "optimizer": {"name": "Adam", "config": {"learning_rate": 0.01}}}'
 
     def test_create_instance(self):
         self.assertEqual(
@@ -40,5 +41,8 @@ class Test_TestHyperparameters(unittest.TestCase):
             self.hp.optimizer, self.opt
         )
         self.assertEqual(
-            self.opt.to_json(), self.json_text
+            self.opt.to_json(), self.opt_json_text
+        )
+        self.assertEqual(
+            self.hp.to_json(), self.hp_json_text
         )

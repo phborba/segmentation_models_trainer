@@ -98,6 +98,7 @@ class Dataset(JsonSchemaMixin):
     name: str
     file_path: str
     n_classes: int
+    dataset_size: int
     augmentation_list: List[ImageAugumentation]
     cache: Any = True
     shuffle: bool = True
@@ -109,9 +110,18 @@ class Dataset(JsonSchemaMixin):
     img_format: str = 'png'
     img_width: int = 256
     img_length: int = 256
+    img_bands: int = 3
+    mask_bands: int = 1
     use_ds_width_len: bool = False
     autotune: int = tf.data.experimental.AUTOTUNE
     distributed_training: bool = False
+
+    def get_img_input_shape(self):
+        return (
+            self.img_width,
+            self.img_length,
+            self.img_bands
+        )
 
     def get_tf_dataset(self, batch_size):
         ds = tf.data.experimental.make_csv_dataset(
@@ -205,6 +215,7 @@ if __name__ == '__main__':
         name='test',
         file_path='/data/test',
         n_classes=1,
+        dataset_size=1000,
         augmentation_list=aug_list
     )
     print(y.to_json())

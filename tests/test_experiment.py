@@ -24,15 +24,31 @@ import json
 from segmentation_models_trainer.experiment_builder.experiment import Experiment
 
 class Test_TestExperiment(unittest.TestCase):
-    experiment = Experiment(
-        name='test',
-        epochs=2,
-        log_path='/data/test',
-        checkpoint_frequency=10,
-        warmup_epochs=2,
-        use_multiple_gpus=False
+    experiment = Experiment.from_dict(
+        {
+            'name' : "test",
+            'epochs' : 2,
+            'experiment_data_path' : "/data/test",
+            'checkpoint_frequency' : 10,
+            'warmup_epochs' : 2,
+            'use_multiple_gpus' : False,
+            'hyperparameters' : {
+                'batch_size' : 16,
+                'optimizer' : {
+                    'name' : "Adam",
+                    'config' : {
+                        'learning_rate' : 0.01
+                    }
+                }
+            },
+            'train_dataset' : json.loads('{"name": "train_ds", "file_path": "/data/train_ds.csv", "n_classes": 1, "dataset_size": 1000, "augmentation_list": [{"name": "random_crop", "parameters": {"crop_width": 256, "crop_height": 256}}, {"name": "per_image_standardization", "parameters": {}}], "cache": true, "shuffle": true, "shuffle_buffer_size": 10000, "shuffle_csv": true, "ignore_errors": true, "num_paralel_reads": 4, "img_dtype": "float32", "img_format": "png", "img_width": 256, "img_length": 256, "img_bands": 3, "mask_bands": 1, "use_ds_width_len": false, "autotune": -1, "distributed_training": false}'),
+
+            'test_dataset' : json.loads('{"name": "test_ds", "file_path": "/data/test_ds.csv", "n_classes": 1, "dataset_size": 1000, "augmentation_list": [{"name": "random_crop", "parameters": {"crop_width": 256, "crop_height": 256}}, {"name": "per_image_standardization", "parameters": {}}], "cache": true, "shuffle": true, "shuffle_buffer_size": 10000, "shuffle_csv": true, "ignore_errors": true, "num_paralel_reads": 4, "img_dtype": "float32", "img_format": "png", "img_width": 256, "img_length": 256, "img_bands": 3, "mask_bands": 1, "use_ds_width_len": false, "autotune": -1, "distributed_training": false}'),
+
+            'model' : json.loads('{"description": "test case", "backbone": "resnet18", "architecture": "Unet", "activation": "sigmoid", "use_imagenet_weights": true}')
+        }
     )
-    json_dict = json.loads("""{"name": "test", "epochs": 2, "log_path": "/data/test", "checkpoint_frequency": 10, "warmup_epochs": 2, "use_multiple_gpus": false}""")
+    json_dict = json.loads('{"name": "test", "epochs": 2, "experiment_data_path": "/data/test", "checkpoint_frequency": 10, "warmup_epochs": 2, "use_multiple_gpus": false, "hyperparameters": {"batch_size": 16, "optimizer": {"name": "Adam", "config": {"learning_rate": 0.01}}}, "train_dataset": {"name": "train_ds", "file_path": "/data/train_ds.csv", "n_classes": 1, "dataset_size": 1000, "augmentation_list": [{"name": "random_crop", "parameters": {"crop_width": 256, "crop_height": 256}}, {"name": "per_image_standardization", "parameters": {}}], "cache": true, "shuffle": true, "shuffle_buffer_size": 10000, "shuffle_csv": true, "ignore_errors": true, "num_paralel_reads": 4, "img_dtype": "float32", "img_format": "png", "img_width": 256, "img_length": 256, "img_bands": 3, "mask_bands": 1, "use_ds_width_len": false, "autotune": -1, "distributed_training": false}, "test_dataset": {"name": "test_ds", "file_path": "/data/test_ds.csv", "n_classes": 1, "dataset_size": 1000, "augmentation_list": [{"name": "random_crop", "parameters": {"crop_width": 256, "crop_height": 256}}, {"name": "per_image_standardization", "parameters": {}}], "cache": true, "shuffle": true, "shuffle_buffer_size": 10000, "shuffle_csv": true, "ignore_errors": true, "num_paralel_reads": 4, "img_dtype": "float32", "img_format": "png", "img_width": 256, "img_length": 256, "img_bands": 3, "mask_bands": 1, "use_ds_width_len": false, "autotune": -1, "distributed_training": false}, "model": {"description": "test case", "backbone": "resnet18", "architecture": "Unet", "activation": "sigmoid", "use_imagenet_weights": true}}')
 
     def test_create_instance(self):
         """[summary]
@@ -45,7 +61,7 @@ class Test_TestExperiment(unittest.TestCase):
             self.experiment.epochs, 2
         )
         self.assertEqual(
-            self.experiment.log_path, '/data/test'
+            self.experiment.experiment_data_path, '/data/test'
         )
         self.assertEqual(
             self.experiment.checkpoint_frequency, 10

@@ -27,6 +27,7 @@ from collections import OrderedDict
 import tensorflow as tf
 import importlib
 import segmentation_models as sm
+
 @dataclass
 class SegmentationModel(JsonSchemaMixin):
     description: str
