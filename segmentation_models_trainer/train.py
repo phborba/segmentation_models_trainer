@@ -19,16 +19,19 @@
  ****
 """
 import json
-from absl import flags
+from absl import flags, app
 from segmentation_models_trainer.experiment_builder.experiment import Experiment
 
 flags.DEFINE_string('pipeline_config_path', None, 'Path to pipeline config '
                     'file.')
 FLAGS = flags.FLAGS
 
-if __name__ == '__main__':
+def main(argv):
     flags.mark_flag_as_required('pipeline_config_path')
     with open(FLAGS.pipeline_config_path) as json_file:
         data = json.load(json_file)
     experiment = Experiment.from_json(data)
     experiment.train()
+
+if __name__ == '__main__':
+  app.run(main)
