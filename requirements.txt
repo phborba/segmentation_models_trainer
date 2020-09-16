@@ -4,9 +4,4 @@ git+https://github.com/phborba/segmentation_models
 pillow
 matplotlib
 numpy
-pyyaml
-h5py
-pandas
-rasterio
-tqdm
 dataclasses-jsonschema
