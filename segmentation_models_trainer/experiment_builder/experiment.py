@@ -118,7 +118,7 @@ class Experiment(JsonSchemaMixin):
             )
         )
         model = train_model(
-            epochs=self.warmup_epochs,
+            epochs=self.epochs,
             save_weights_path=final_save_path,
             encoder_freeze=False,
             load_weights=warmup_path if self.warmup_epochs > 0 else None
