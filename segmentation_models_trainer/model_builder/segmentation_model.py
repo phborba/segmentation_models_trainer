@@ -27,7 +27,6 @@ from collections import OrderedDict
 import tensorflow as tf
 import importlib
 import segmentation_models as sm
-
 @dataclass
 class SegmentationModel(JsonSchemaMixin):
     description: str
@@ -38,10 +37,10 @@ class SegmentationModel(JsonSchemaMixin):
 
     def __post_init__(self):
         if self.architecture not in ['Unet', 'PSPNet', 'FPN', 'Linknet', 'custom']:
-            raise NotImplementedError("Architecture not implemented")
+            raise ValueError("Architecture not implemented")
         if self.backbone != 'custom' and \
             self.backbone not in sm.get_available_backbone_names():
-            raise NotImplementedError("Backbone not implemented")
+            raise ValueError("Backbone not implemented")
 
     def get_model(self, n_classes, encoder_freeze, input_shape=None):
         """

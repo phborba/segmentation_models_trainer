@@ -80,3 +80,18 @@ class Test_TestSegmentationModel(unittest.TestCase):
             ).predict(x).shape[:-1],
             sm_model.predict(x).shape[:-1]
         )
+    
+    def test_invalid_values(self):
+        with self.assertRaises(ValueError):
+            SegmentationModel(
+                description='test case',
+                backbone='lalala',
+                architecture='Unet'
+            )
+
+        with self.assertRaises(ValueError):
+            SegmentationModel(
+                description='test case',
+                backbone='resnet18',
+                architecture='lalala'
+            )
