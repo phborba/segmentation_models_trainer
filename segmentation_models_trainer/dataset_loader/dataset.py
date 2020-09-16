@@ -26,46 +26,69 @@ from typing import Any, List
 from collections import OrderedDict
 import tensorflow as tf
 
-AUGMENTATIONS = OrderedDict(
-    {
-        'random_crop' : lambda x: tf.image.random_crop(
-            x[0],
-            size=[
-                x[1]['crop_width'],
-                x[1]['crop_height'],
-                4
-            ]
-        ),
-        'random_flip_left_right' : lambda x: tf.image.random_flip_left_right(x[0]),
-        'random_flip_up_down' : lambda x: tf.image.random_flip_up_down(x[0]),
-        'random_brightness' : lambda x: tf.image.random_brightness(
-            x[0],
-            max_delta=x[1]['max_delta']
-        ),
-        'random_contrast' : lambda x: tf.image.random_contrast(
-            x[0],
-            lower=x[1]['lower'],
-            upper=x[1]['upper']
-        ),
-        'random_saturation' : lambda x: tf.image.random_saturation(
-            x[0],
-            lower=x[1]['lower'],
-            upper=x[1]['upper']
-        ),
-        'random_hue' : lambda x: tf.image.random_hue(
-            x[0],
-            max_delta=x[1]['max_delta']
-        ),
-        'per_image_standardization' : lambda x: tf.image.per_image_standardization(
-            x[0]
-        )
-    }
-)
-
 IMAGE_DTYPE = {
     'float32' : tf.float32,
     'float16' : tf.float16
 }
+
+@tf.function
+def get_augmentation(name, image, parameters):
+    """
+        Returns augmentation function. It has to be implemented
+        as if else, so that tensorflow can convert it to faster
+        implementation.
+
+    Args:
+        name (str): name of the augmentation
+
+    Returns:
+        tf function: function to perform augmentation
+    """
+    if name == 'random_crop':
+        return tf.image.random_crop(
+            image,
+            size=[
+                parameters['crop_width'],
+                parameters['crop_height'],
+                image.shape[-1]
+            ]
+        )
+    elif name == 'random_flip_left_right':
+        return tf.image.random_flip_left_right(
+            image
+        )
+    elif 'random_flip_up_down':
+        return tf.image.random_flip_up_down(
+            image
+        )
+    elif 'random_brightness':
+        return tf.image.random_brightness(
+            image,
+            parameters['max_delta']
+        )
+    elif 'random_contrast':
+        return tf.image.random_contrast(
+            image,
+            parameters['lower'],
+            parameters['upper']
+        )
+    elif 'random_saturation':
+        return tf.image.random_saturation(
+            image,
+            parameters['lower'],
+            parameters['upper']
+        )
+    elif 'random_hue':
+        return tf.image.random_hue(
+            image,
+            parameters['max_delta']
+        )
+    elif 'per_image_standardization':
+        return tf.image.per_image_standardization(
+            image
+        )
+    else:
+        raise ValueError("Augmentation not implemented.")
 
 @dataclass
 class ImageAugumentation(JsonSchemaMixin):
@@ -80,8 +103,10 @@ class ImageAugumentation(JsonSchemaMixin):
                 'random_flip_left_right',
                 'random_flip_up_down'
             ] else input_image
-        augmented_image = AUGMENTATIONS[self.name](
-            [image, self.parameters]
+        augmented_image = get_augmentation(
+            self.name,
+            image,
+            self.parameters
         )
         if self.name in [
                 'random_crop', 'random_flip_left_right', 'random_flip_up_down'
@@ -139,7 +164,7 @@ class Dataset(JsonSchemaMixin):
             img, label = augment_image(img, label)
             return img, label
         
-        @tf.function
+        
         def decode_img(img, width, length, channels=3):
             # convert the compressed string to a 3D uint8 tensor
             img = tf.image.decode_png(img, channels=channels)
@@ -191,8 +216,6 @@ class Dataset(JsonSchemaMixin):
         else:
             strategy = tf.distribute.get_strategy()
             return strategy.experimental_distribute_dataset(prepared_ds)
-
-    
 
 if __name__ == '__main__':
     aug_list = [
