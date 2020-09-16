@@ -20,7 +20,7 @@
 """
 import json
 from absl import flags, app
-from segmentation_models_trainer.experiment_builder.experiment import Experiment
+from .experiment_builder.experiment import Experiment
 
 flags.DEFINE_string('pipeline_config_path', None, 'Path to pipeline config '
                     'file.')
