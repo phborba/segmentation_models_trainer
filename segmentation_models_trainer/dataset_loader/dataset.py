@@ -124,6 +124,54 @@ class Dataset(JsonSchemaMixin):
         )
 
     def get_tf_dataset(self, batch_size):
+        def process_csv_entry(entry):
+            width = entry['width'] if self.use_ds_width_len else self.img_width
+            length = entry['length'] if self.use_ds_width_len else self.img_length
+            label = tf.io.read_file(
+                entry['label_path'][0]
+            )
+            label = decode_img(label, width, length, channels=1)
+            # load the raw data from the file as a string
+            img = tf.io.read_file(
+                entry['image_path'][0]
+            )
+            img = decode_img(img, width, length)
+            img, label = augment_image(img, label)
+            return img, label
+        
+        @tf.function
+        def decode_img(img, width, length, channels=3):
+            # convert the compressed string to a 3D uint8 tensor
+            img = tf.image.decode_png(img, channels=channels)
+            # Use `convert_image_dtype` to convert to floats in the [0,1] range.
+            img = tf.image.convert_image_dtype(img, IMAGE_DTYPE[self.img_dtype])
+            # resize the image to the desired size.
+            return tf.image.resize(img, [width, length])
+        
+        def prepare_for_training(ds, batch_size):
+            if self.cache:
+                if isinstance(self.cache, str):
+                    ds = ds.cache(self.cache)
+                else:
+                    ds = ds.cache()
+            if self.shuffle:
+                ds = ds.shuffle(self.shuffle_buffer_size)
+            ds = ds.batch(batch_size)
+            # Repeat forever
+            ds = ds.repeat()
+            # `prefetch` lets the dataset fetch batches in the background while the model
+            # is training.
+            ds = ds.prefetch(buffer_size=tf.data.experimental.AUTOTUNE if self.autotune == -1 else self.autotune)
+            return ds
+        
+        def augment_image(img, label):
+            for augmentation in self.augmentation_list:
+                img, label = augmentation.augment_image(
+                    img,
+                    label
+                )
+            return img, label
+
         ds = tf.data.experimental.make_csv_dataset(
             self.file_path,
             batch_size=batch_size,
@@ -131,10 +179,10 @@ class Dataset(JsonSchemaMixin):
             num_parallel_reads=self.num_paralel_reads
         )
         labeled_ds = ds.map(
-            self.process_csv_entry,
-            num_parallel_calls=self.autotune
+            process_csv_entry,
+            num_parallel_calls=tf.data.experimental.AUTOTUNE if self.autotune == -1 else self.autotune
         )
-        prepared_ds = self.prepare_for_training(
+        prepared_ds = prepare_for_training(
             labeled_ds,
             batch_size
         )
@@ -144,53 +192,7 @@ class Dataset(JsonSchemaMixin):
             strategy = tf.distribute.get_strategy()
             return strategy.experimental_distribute_dataset(prepared_ds)
 
-    def process_csv_entry(self, entry):
-        width = entry['width'] if self.use_ds_width_len else self.img_width
-        length = entry['length'] if self.use_ds_width_len else self.img_length
-        label = tf.io.read_file(
-            entry['label_path'][0]
-        )
-        label = self.decode_img(label, width, length, channels=1)
-        # load the raw data from the file as a string
-        img = tf.io.read_file(
-            entry['image_path'][0]
-        )
-        img = self.decode_img(img, width, length)
-        img, label = self.augment_image(img, label)
-        return img, label
     
-    @tf.function
-    def decode_img(self, img, width, length, channels=3):
-        # convert the compressed string to a 3D uint8 tensor
-        img = tf.image.decode_png(img, channels=channels)
-        # Use `convert_image_dtype` to convert to floats in the [0,1] range.
-        img = tf.image.convert_image_dtype(img, IMAGE_DTYPE[self.img_dtype])
-        # resize the image to the desired size.
-        return tf.image.resize(img, [width, length])
-    
-    def prepare_for_training(self, ds, batch_size):
-        if self.cache:
-            if isinstance(self.cache, str):
-                ds = ds.cache(self.cache)
-            else:
-                ds = ds.cache()
-        if self.shuffle:
-            ds = ds.shuffle(self.shuffle_buffer_size)
-        ds = ds.batch(batch_size)
-        # Repeat forever
-        ds = ds.repeat()
-        # `prefetch` lets the dataset fetch batches in the background while the model
-        # is training.
-        ds = ds.prefetch(buffer_size=self.autotune)
-        return ds
-    
-    def augment_image(self, img, label):
-        for augmentation in self.augmentation_list:
-            img, label = augmentation.augment_image(
-                img,
-                label
-            )
-        return img, label
 
 if __name__ == '__main__':
     aug_list = [

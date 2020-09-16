@@ -64,7 +64,7 @@ class Experiment(JsonSchemaMixin):
         training_steps_per_epoch = int( np.ceil(self.train_dataset.dataset_size / BATCH_SIZE) )
         test_steps_per_epoch = int( np.ceil(self.test_dataset.dataset_size / BATCH_SIZE) )
 
-        def train_model(self, epochs, save_weights_path, encoder_freeze, load_weights=None):
+        def train_model(epochs, save_weights_path, encoder_freeze, load_weights=None):
             with strategy.scope():
                 model = self.model.get_model(
                     n_classes,
