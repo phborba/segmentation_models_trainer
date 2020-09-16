@@ -18,7 +18,7 @@ URL = 'https://github.com/phborba/segmentation_models_trainer'
 EMAIL = 'philipeborba@gmail.com'
 AUTHOR = 'Philipe Borba'
 REQUIRES_PYTHON = '>=3.6.0'
-VERSION = None
+VERSION = '0.1'
 
 # The rest you shouldn't have to touch too much :)
 # ------------------------------------------------
@@ -30,9 +30,17 @@ here = os.path.abspath(os.path.dirname(__file__))
 # What packages are required for this module to be executed?
 try:
     with open(os.path.join(here, 'requirements.txt'), encoding='utf-8') as f:
-        REQUIRED = f.read().split('\n')
+        REQUIRED = []
+        DEP_LINKS = []
+        for i in f.read().split('\n'):
+            if 'git+' in i:
+                DEP_LINKS.append(i)
+            else:
+                REQUIRED.append(i)
+
 except:
     REQUIRED = []
+    DEP_LINKS = []
 
 # What packages are optional?
 EXTRAS = {
@@ -113,6 +121,7 @@ setup(
     # },
     install_requires=REQUIRED,
     extras_require=EXTRAS,
+    dependency_links=DEP_LINKS,
     include_package_data=True,
     license='MIT',
     classifiers=[
