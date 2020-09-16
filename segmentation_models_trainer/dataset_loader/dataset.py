@@ -97,6 +97,7 @@ class ImageAugumentation(JsonSchemaMixin):
 class Dataset(JsonSchemaMixin):
     name: str
     file_path: str
+    n_classes: int
     augmentation_list: List[ImageAugumentation]
     cache: Any = True
     shuffle: bool = True
@@ -203,6 +204,7 @@ if __name__ == '__main__':
     y = Dataset(
         name='test',
         file_path='/data/test',
+        n_classes=1,
         augmentation_list=aug_list
     )
     print(y.to_json())

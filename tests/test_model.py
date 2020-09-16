@@ -21,61 +21,62 @@
 
 import unittest
 import json
-from segmentation_models_trainer.dataset_loader.dataset import Dataset, ImageAugumentation
+from segmentation_models_trainer.model_builder.segmentation_model import SegmentationModel
+import segmentation_models as sm
+import numpy as np
 
 
-class Test_TestDataset(unittest.TestCase):
-    aug_list = [
-        ImageAugumentation.from_dict(
-            {
-                'name' : 'random_crop',
-                'parameters' : {
-                    'crop_width' : 256,
-                    'crop_height' : 256
-                }
-            }
-        ),
-        ImageAugumentation.from_dict(
-            {
-                'name' : 'per_image_standardization',
-                'parameters' : {
-                }
-            }
-        )
-    ]
-    dataset = Dataset(
-        name='test',
-        file_path='/data/test',
-        n_classes=1,
-        augmentation_list=aug_list
+class Test_TestSegmentationModel(unittest.TestCase):
+    
+    model = SegmentationModel(
+        description='test case',
+        backbone='resnet18',
+        architecture='Unet'
     )
-    json_dict = json.loads('{"name": "test", "file_path": "/data/test", "n_classes": 1, "augmentation_list": [{"name": "random_crop", "parameters": {"crop_width": 256, "crop_height": 256}}, {"name": "per_image_standardization", "parameters": {}}], "cache": true, "shuffle": true, "shuffle_buffer_size": 10000, "shuffle_csv": true, "ignore_errors": true, "num_paralel_reads": 4, "img_dtype": "float32", "img_format": "png", "img_width": 256, "img_length": 256, "use_ds_width_len": false, "autotune": -1, "distributed_training": false}')
+    json_dict = json.loads('{"description": "test case", "backbone": "resnet18", "architecture": "Unet", "activation": "sigmoid", "use_imagenet_weights": true}')
 
     def test_create_instance(self):
         """[summary]
         Tests instance creation
         """          
         self.assertEqual(
-            self.dataset.name, 'test'
+            self.model.description, 'test case'
         )
         self.assertEqual(
-            self.dataset.file_path, '/data/test'
+            self.model.backbone, 'resnet18'
         )
         self.assertEqual(
-            self.dataset.n_classes, 1
+            self.model.architecture, 'Unet'
         )
     
     def test_export_instance(self):
         self.assertEqual(
-            self.dataset.to_dict(),
+            self.model.to_dict(),
             self.json_dict
         )
     
     def test_import_instance(self):
-        new_dataset = Dataset.from_dict(
+        new_model = SegmentationModel.from_dict(
             self.json_dict
         )
         self.assertEqual(
-            self.dataset,
-            new_dataset
+            self.model,
+            new_model
+        )
+    
+    def test_get_model(self):
+        input_shape = (256, 256, 3)
+        x = np.ones((1, *input_shape))
+        sm_model = sm.Unet(
+            'resnet18',
+            encoder_weights='imagenet',
+            encoder_freeze=False
+        )
+        self.assertEqual(
+            self.model.get_model(
+                1,
+                False,
+                input_shape=input_shape
+            ).predict(x).shape[:-1],
+            sm_model.predict(x).shape[:-1]
         )
