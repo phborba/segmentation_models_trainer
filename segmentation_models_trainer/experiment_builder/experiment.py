@@ -64,48 +64,52 @@ class Experiment(JsonSchemaMixin):
         training_steps_per_epoch = int( np.ceil(self.train_dataset.dataset_size / BATCH_SIZE) )
         test_steps_per_epoch = int( np.ceil(self.test_dataset.dataset_size / BATCH_SIZE) )
 
-        if self.warmup_epochs > 0:
-            warmup_path = self.train_warmup(
-                strategy,
-                n_classes,
-                input_shape,
+        def train_model(self, epochs, save_weights_path, encoder_freeze, load_weights=None):
+            with strategy.scope():
+                model = self.model.get_model(
+                    n_classes,
+                    encoder_freeze=True,
+                    input_shape=input_shape
+                )
+                opt = self.hyperparameters.optimizer.tf_object
+                #TODO metrics and loss fields into compile
+                model.compile(
+                    opt,
+                    loss=sm.losses.bce_jaccard_loss,
+                    metrics=[
+                        'accuracy',
+                        'binary_crossentropy',
+                        sm.metrics.iou_score,
+                        sm.metrics.precision,
+                        sm.metrics.recall,
+                        sm.metrics.f1_score,
+                        sm.metrics.f2_score
+                    ]
+                )
+            model.fit(
                 train_ds,
-                test_ds,
-                training_steps_per_epoch,
-                test_steps_per_epoch
+                batch_size=BATCH_SIZE,
+                steps_per_epoch=training_steps_per_epoch,
+                epochs=epochs,
+                validation_data=test_ds,
+                validation_steps=test_steps_per_epoch,
+                callbacks=[]
             )
-        with strategy.scope():
-            model = self.model.get_model(
-                n_classes,
-                encoder_freeze=False,
-                input_shape=input_shape
+            model.save_weights(
+                save_weights_path
             )
-            opt = self.hyperparameters.optimizer.tf_object
-            #TODO metrics and loss fields into compile
-            model.compile(
-                opt,
-                loss=sm.losses.bce_jaccard_loss,
-                metrics=[
-                    'accuracy',
-                    'binary_crossentropy',
-                    sm.metrics.iou_score,
-                    sm.metrics.precision,
-                    sm.metrics.recall,
-                    sm.metrics.f1_score,
-                    sm.metrics.f2_score
-                ]
+            return model
+
+        if self.warmup_epochs > 0:
+            warmup_path = os.path.join(
+                self.SAVE_PATH,
+                'warmup_experiment_{name}.h5'.format(name=self.name)
             )
-            if self.warmup_epochs > 0:
-                model.load_weights(warmup_path)
-        model.fit(
-            train_ds,
-            batch_size=BATCH_SIZE,
-            steps_per_epoch=training_steps_per_epoch,
-            epochs=self.epochs,
-            validation_data=test_ds,
-            validation_steps=test_steps_per_epoch,
-            callbacks=[]
-        )
+            model = train_model(
+                epochs=self.warmup_epochs,
+                save_weights_path=warmup_path,
+                encoder_freeze=True
+            )
         final_save_path = os.path.join(
             self.SAVE_PATH,
             'experiment_{name}_{epochs}_epochs.h5'.format(
@@ -113,49 +117,14 @@ class Experiment(JsonSchemaMixin):
                 epochs=self.epochs
             )
         )
-        model.save(final_save_path)
-
-    def train_warmup(self, strategy, n_classes, input_shape,\
-        train_ds, test_ds, training_steps_per_epoch, test_steps_per_epoch):
-        with strategy.scope():
-            model = self.model.get_model(
-                n_classes,
-                encoder_freeze=True,
-                input_shape=input_shape
-            )
-            opt = self.hyperparameters.optimizer.tf_object
-            #TODO metrics and loss fields into compile
-            model.compile(
-                opt,
-                loss=sm.losses.bce_jaccard_loss,
-                metrics=[
-                    'accuracy',
-                    'binary_crossentropy',
-                    sm.metrics.iou_score,
-                    sm.metrics.precision,
-                    sm.metrics.recall,
-                    sm.metrics.f1_score,
-                    sm.metrics.f2_score
-                ]
-            )
-        model.fit(
-            train_ds,
-            batch_size=BATCH_SIZE,
-            steps_per_epoch=training_steps_per_epoch,
+        model = train_model(
             epochs=self.warmup_epochs,
-            validation_data=test_ds,
-            validation_steps=test_steps_per_epoch,
-            callbacks=[]
+            save_weights_path=warmup_path,
+            encoder_freeze=False,
+            load_weights=warmup_path if self.warmup_epochs > 0 else None
         )
-        warmup_path = os.path.join(
-            self.SAVE_PATH,
-            'warmup_experiment_{name}.h5'.format(name=self.name)
-        )
-        model.save_weights(
-            warmup_path
-        )
-        return warmup_path
-
+        
+        model.save(final_save_path)
     
     def create_data_folders(self):
         DATA_DIR = self.test_and_create_folder(self.experiment_data_path)
