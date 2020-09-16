@@ -30,7 +30,7 @@ def main(argv):
     flags.mark_flag_as_required('pipeline_config_path')
     with open(FLAGS.pipeline_config_path) as json_file:
         data = json.load(json_file)
-    experiment = Experiment.from_json(data)
+    experiment = Experiment.from_dict(data)
     experiment.train()
 
 if __name__ == '__main__':
