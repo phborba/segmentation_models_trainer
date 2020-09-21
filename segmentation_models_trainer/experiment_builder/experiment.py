@@ -22,11 +22,16 @@ import tensorflow as tf
 import segmentation_models as sm
 import os
 import numpy as np
+import importlib
+from typing import Any, List
 from dataclasses import dataclass
 from dataclasses_jsonschema import JsonSchemaMixin
 from segmentation_models_trainer.model_builder.segmentation_model import SegmentationModel
 from segmentation_models_trainer.hyperparameter_builder.hyperparameters import Hyperparameters
 from segmentation_models_trainer.dataset_loader.dataset import Dataset
+from segmentation_models_trainer.callbacks_loader.callback import Callback, CallbackList
+from segmentation_models_trainer.experiment_builder.loss import Loss
+from segmentation_models_trainer.experiment_builder.metric import Metric, MetricList
 
 @dataclass
 class Experiment(JsonSchemaMixin):
@@ -42,6 +47,9 @@ class Experiment(JsonSchemaMixin):
     train_dataset: Dataset
     test_dataset: Dataset
     model: SegmentationModel
+    loss: Loss
+    callbacks: CallbackList
+    metrics: MetricList
 
     def train(self):
         gpu_devices = tf.config.experimental.list_physical_devices('GPU')
@@ -65,6 +73,7 @@ class Experiment(JsonSchemaMixin):
         test_steps_per_epoch = int( np.ceil(self.test_dataset.dataset_size / BATCH_SIZE) )
 
         def train_model(epochs, save_weights_path, encoder_freeze, load_weights=None):
+            callback_list = self.callbacks.get_tf_objects()
             with strategy.scope():
                 model = self.model.get_model(
                     n_classes,
@@ -73,18 +82,11 @@ class Experiment(JsonSchemaMixin):
                 )
                 opt = self.hyperparameters.optimizer.tf_object
                 #TODO metrics and loss fields into compile
+                metric_list = self.metrics.get_tf_objects()
                 model.compile(
                     opt,
                     loss=sm.losses.bce_jaccard_loss,
-                    metrics=[
-                        'accuracy',
-                        'binary_crossentropy',
-                        sm.metrics.iou_score,
-                        sm.metrics.precision,
-                        sm.metrics.recall,
-                        sm.metrics.f1_score,
-                        sm.metrics.f2_score
-                    ]
+                    metrics=metric_list
                 )
             model.fit(
                 train_ds,
@@ -93,7 +95,7 @@ class Experiment(JsonSchemaMixin):
                 epochs=epochs,
                 validation_data=test_ds,
                 validation_steps=test_steps_per_epoch,
-                callbacks=[]
+                callbacks=callback_list
             )
             model.save_weights(
                 save_weights_path
@@ -151,17 +153,6 @@ class Experiment(JsonSchemaMixin):
             return path
         os.makedirs(path, exist_ok=True)
         return path
-        
-
-
-@dataclass
-class Callbacks(JsonSchemaMixin):
-    name: str
-    keras_callback: str
-
-@dataclass
-class Metric(JsonSchemaMixin):
-    name: str
 
 if __name__ == "__main__":
     import json
@@ -186,7 +177,10 @@ if __name__ == "__main__":
 
             'test_dataset' : json.loads('{"name": "test_ds", "file_path": "/data/test_ds.csv", "n_classes": 1, "dataset_size": 1000, "augmentation_list": [{"name": "random_crop", "parameters": {"crop_width": 256, "crop_height": 256}}, {"name": "per_image_standardization", "parameters": {}}], "cache": true, "shuffle": true, "shuffle_buffer_size": 10000, "shuffle_csv": true, "ignore_errors": true, "num_paralel_reads": 4, "img_dtype": "float32", "img_format": "png", "img_width": 256, "img_length": 256, "img_bands": 3, "mask_bands": 1, "use_ds_width_len": false, "autotune": -1, "distributed_training": false}'),
 
-            'model' : json.loads('{"description": "test case", "backbone": "resnet18", "architecture": "Unet", "activation": "sigmoid", "use_imagenet_weights": true}')
+            'model' : json.loads('{"description": "test case", "backbone": "resnet18", "architecture": "Unet", "activation": "sigmoid", "use_imagenet_weights": true}'),
+            'loss' : json.loads('{"class_name": "bce_dice_loss", "config": {}, "framework": "sm"}'),
+            'callbacks' : json.loads('{"items": [{"name": "ReduceLROnPlateau", "config": {"monitor": "val_loss", "factor": 0.2, "patience": 5, "min_lr": 0.001}}, {"name": "ModelCheckpoint", "config": {"filepath": "/data/teste/checkpoint.hdf5"}}]}'),
+            'metrics' : json.loads('{"items": [{"class_name": "iou_score", "config": {}, "framework": "sm"}, {"class_name": "precision", "config": {}, "framework": "sm"}, {"class_name": "recall", "config": {}, "framework": "sm"}, {"class_name": "f1_score", "config": {}, "framework": "sm"}, {"class_name": "f2_score", "config": {}, "framework": "sm"}, {"class_name": "LogCoshError", "config": {}, "framework": "tf.keras"}, {"class_name": "KLDivergence", "config": {}, "framework": "tf.keras"}, {"class_name": "MeanIoU", "config": {"num_classes": 2}, "framework": "tf.keras"}]}'),
         }
     )
 

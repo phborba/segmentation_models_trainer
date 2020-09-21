@@ -20,6 +20,7 @@
  ****
 """
 import tensorflow as tf
+from typing import Any, List
 from segmentation_models_trainer.callbacks_loader.callback_factory import CallbackFactory
 from dataclasses import dataclass
 from dataclasses_jsonschema import JsonSchemaMixin
@@ -27,9 +28,10 @@ from dataclasses_jsonschema import JsonSchemaMixin
 @dataclass
 class Callback(JsonSchemaMixin):
     name: str
-    parameters: dict
+    config: dict
+
     def __post_init__(self):
-        pass
+        self.callback_obj = self.get_callback()
 
     @staticmethod
     def validate_callback_name(name):
@@ -42,15 +44,25 @@ class Callback(JsonSchemaMixin):
     def get_callback(self):
         return CallbackFactory.get_callback(
             self.name,
-            self.parameters
+            self.config
         )
+
+@dataclass
+class CallbackList(JsonSchemaMixin):
+    items: List[Callback]
+
+    def get_tf_objects(self):
+        return [
+            i.get_callback() for i in self.items
+        ]
 
 
 
 if __name__ == '__main__':
+    import json
     x = Callback(
         name='ReduceLROnPlateau',
-        parameters= {
+        config= {
             'monitor' : 'val_loss',
             'factor' : 0.2,
             'patience' : 5,
@@ -58,5 +70,27 @@ if __name__ == '__main__':
         }
     )
     print(x.to_json())
+    print(json.dumps([x.to_json()]))
     x.get_callback()
-    x
+    y= [
+        Callback.from_dict(
+            {
+                'name' : 'ReduceLROnPlateau',
+                'config' : {
+                    'monitor' : 'val_loss',
+                    'factor' : 0.2,
+                    'patience' : 5,
+                    'min_lr' : 0.001
+                }
+            }
+        ),
+        Callback.from_dict(
+            {
+                'name' : 'ModelCheckpoint',
+                'config' : {'filepath' : '/data/teste'}
+            }
+        )
+    ]
+    y
+    z = CallbackList(y)
+    print(z.to_json())
