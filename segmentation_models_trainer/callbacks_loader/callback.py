@@ -19,9 +19,8 @@
  *                                                                         *
  ****
 """
-
+import tensorflow as tf
 from segmentation_models_trainer.callbacks_loader.callback_factory import CallbackFactory
-
 from dataclasses import dataclass
 from dataclasses_jsonschema import JsonSchemaMixin
 
