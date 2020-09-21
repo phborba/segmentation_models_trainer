@@ -39,7 +39,7 @@ class CallbackFactory:
         if name not in available_callbacks:
             raise ValueError("Callback not implemented")
         if name == 'ImageHistory':
-            return segmentation_models_trainer.callbacks_loader.custom_callbacks.ImageHistory(
+            return smt.callbacks_loader.custom_callbacks.ImageHistory(
                 parameters
             )
         if name == 'ReduceLROnPlateau':
