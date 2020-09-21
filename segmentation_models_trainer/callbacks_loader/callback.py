@@ -53,7 +53,7 @@ class CallbackList(JsonSchemaMixin):
 
     def get_tf_objects(self):
         return [
-            i.get_callback() for i in items
+            i.get_callback() for i in self.items
         ]
 
 

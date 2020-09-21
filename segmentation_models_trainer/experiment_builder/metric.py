@@ -62,7 +62,7 @@ class MetricList(JsonSchemaMixin):
 
     def get_tf_objects(self):
         return [
-            i.metric_obj for i in items
+            i.metric_obj for i in self.items
         ]
 
 if __name__ == "__main__":
