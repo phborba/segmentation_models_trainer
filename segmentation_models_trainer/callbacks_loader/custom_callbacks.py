@@ -64,6 +64,16 @@ class ImageHistory(tf.keras.callbacks.Callback):
             for p, params in enumerate(comb_list):
                 if params is None:
                     break
+                report_path = os.path.join(
+                    self.report_dir ,
+                    'report_epoch_{epoch}_{page}-{n_pages}_{date}.png'.format(
+                        date=datetime.datetime.now().strftime("%Y%m%d-%H%M%S"),
+                        epoch=self.last_epoch,
+                        page=p,
+                        n_pages=n_pages
+                    )
+                )
+                params.append(report_path)
                 image_tensor = tf.py_function(
                     self._wrap_pltfn(
                         display_predictions
@@ -123,16 +133,7 @@ class ImageHistory(tf.keras.callbacks.Callback):
         return image_data, label_data, y_pred, data
     
     def _wrap_pltfn(self, plt_fn):
-        def save_fig(self, plt):
-            report_path = os.path.join(
-                self.report_dir ,
-                'report_epoch_{epoch}_{page}-{n_pages}_{date}.png'.format(
-                    date=datetime.datetime.now().strftime("%Y%m%d-%H%M%S"),
-                    epoch=self.last_epoch,
-                    page=p,
-                    n_pages=n_pages
-                )
-            )
+        def save_fig(self, plt, report_path):
             plt.savefig(
                 report_path,
                 format='png'
@@ -146,10 +147,12 @@ class ImageHistory(tf.keras.callbacks.Callback):
                 figsize=(20, 100),
                 subplot_kw={'xticks': [], 'yticks': []}
             )
-            args = [fig, axs] + list(args)
+            arg_list = list(args)
+            report_path = arg_list.pop(-1)
+            args = [fig, axs] + arg_list
             plt_fn(*args)
             buf = io.BytesIO()
-            self.sample_image(plt)
+            self.sample_image(plt, report_path)
             plt.savefig(
                 buf,
                 format='png'
