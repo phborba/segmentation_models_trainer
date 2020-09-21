@@ -31,14 +31,18 @@ class Metric(JsonSchemaMixin):
     framework: str
     
     def __post_init__(self):
+        if self.framework not in ['sm', 'tf.keras']:
+            raise ValueError("Metric not implemented")
+
+    def get_metric(self):
         if self.framework == 'sm':
-            self.metric_obj = self.get_sm_metric(self.class_name)
+            return self.get_sm_metric(self.class_name)
         elif self.framework == 'tf.keras':
             identifier = {
                 "class_name" : self.class_name,
                 "config" : self.config
             }
-            self.metric_obj = tf.keras.metrics.get(identifier)
+            return tf.keras.metrics.get(identifier)
         else:
             raise ValueError("Metric not implemented")
 
@@ -62,7 +66,7 @@ class MetricList(JsonSchemaMixin):
 
     def get_tf_objects(self):
         return [
-            i.metric_obj for i in self.items
+            i.get_metric() for i in self.items
         ]
 
 if __name__ == "__main__":
