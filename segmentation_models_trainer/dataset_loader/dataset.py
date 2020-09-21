@@ -20,7 +20,7 @@
  ****
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from dataclasses_jsonschema import JsonSchemaMixin
 from typing import Any, List
 from collections import OrderedDict

@@ -31,14 +31,14 @@ class Test_TestCallbacks(unittest.TestCase):
     
     callback = Callback(
         name='ReduceLROnPlateau',
-        parameters= {
+        config= {
             'monitor' : 'val_loss',
             'factor' : 0.2,
             'patience' : 5,
             'min_lr' : 0.001
         }
     )
-    json_dict = json.loads('{"name": "ReduceLROnPlateau", "parameters": {"monitor": "val_loss", "factor": 0.2, "patience": 5, "min_lr": 0.001}}')
+    json_dict = json.loads('{"name": "ReduceLROnPlateau", "config": {"monitor": "val_loss", "factor": 0.2, "patience": 5, "min_lr": 0.001}}')
 
     def test_create_instance(self):
         """[summary]
