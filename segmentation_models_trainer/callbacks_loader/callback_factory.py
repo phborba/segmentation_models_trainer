@@ -21,30 +21,36 @@
 """
 import tensorflow as tf
 import segmentation_models_trainer as smt
-from segmentation_models_trainer.callbacks_loader.custom_callbacks import *  
+from segmentation_models_trainer.callbacks_loader.custom_callbacks import ImageHistory 
 
 class CallbackFactory:
     def __init__(self):
-        self.available_callbacks = [
-                i for i in dir(tf.keras.callbacks) if '__' not in i and i != 'experimental'
-            ] + [
-                i for i in dir(tf.keras.callbacks.experimental) if not i.startswith('_')
-            ] + self.get_custom_callbacks()
-    
-    @staticmethod
-    def get_custom_callbacks():
-        return [
-            i for i in smt.callbacks_loader.custom_callbacks.__all__
-        ]
+        pass
 
     @staticmethod
     def get_callback(name, parameters):
-        if name not in self.available_callbacks:
+        available_callbacks = [
+            'ReduceLROnPlateau',
+            'ModelCheckpoint',
+            'TensorBoard'
+        ] + [
+            i for i in smt.callbacks_loader.custom_callbacks.__all__
+        ]
+        if name not in available_callbacks:
             raise ValueError("Callback not implemented")
         if name == 'ImageHistory':
             return segmentation_models_trainer.callbacks_loader.custom_callbacks.ImageHistory(
-                
+                parameters
             )
-
-if __name__ == '__main__':
-    x=CallbackFactory()
+        if name == 'ReduceLROnPlateau':
+            return tf.keras.callbacks.ReduceLROnPlateau(
+                **parameters
+            )
+        if name == 'ModelCheckpoint':
+            return tf.keras.callbacks.ModelCheckpoint(
+                **parameters
+            )
+        if name == 'TensorBoard':
+            return tf.keras.callbacks.TensorBoard(
+                **parameters
+            )

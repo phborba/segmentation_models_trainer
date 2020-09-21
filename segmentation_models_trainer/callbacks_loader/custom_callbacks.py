@@ -21,7 +21,11 @@
 """
 import tensorflow as tf
 import numpy as np
+import io
+import matplotlib.pyplot as plt
 from tensorflow.python.util.tf_export import keras_export
+from itertools import zip_longest
+
 
 __all__ = 'ImageHistory',
 
@@ -36,59 +40,125 @@ class ImageHistory(tf.keras.callbacks.Callback):
         self.n_epochs = params['n_epochs']
         self.draw_interval = params['draw_interval']
         self.batch_size = params['batch_size']
+        self.page_size = params['page_size']
+        self.report_dir = params['report_dir']
     
     def on_epoch_end(self, epoch, logs=None):
         self.my_logs = logs or {}
         self.last_epoch += 1
+
+        image_data, label_data, y_pred, data = self.predict_data()
+        args = [
+            iter(
+                zip(image_data, label_data, y_pred)
+            )
+        ] * self.page_size
+
+        file_writer = tf.summary.create_file_writer(
+            self.tensor_board_dir
+        )
+        n_pages = np.ceil(
+            self.batch_size / self.page_size
+        )
+        for comb_list in zip_longest(*args, fillvalue=None):
+            for p, params in enumerate(comb_list):
+                if params is None:
+                    break
+                image_tensor = tf.py_function(
+                    self._wrap_pltfn(
+                        display_predictions
+                    ),
+                    params,
+                    tf.uint8
+                )
+                image_tensor.set_shape(
+                    [None, None, 4]
+                )
+                with file_writer.as_default():
+                    tf.summary.image(
+                        'epoch',
+                        data,
+                        step=self.last_epoch
+                    )
+                    tf.summary.image(
+                        'Ground Truth and Prediction Comparison Page {page}/{n_pages}'.format(
+                            page=p,
+                            n_pages=n_pages
+                        ),
+                        tf.expand_dims(image_tensor, 0),
+                        step=self.last_epoch
+                    )
+                    tf.summary.flush()
+                image_tensor = None
+        return
+    
+    def predict_data(self):
         predicted_images = []
         ref_labels = []
-        image_data, label_data = list(self.data.take(1))[0]
+        image_data, label_data = list(
+            self.data.take(1)
+        )[0]
         #took one batch
         y_pred = self.model.predict(image_data)
         predicted_images.append(y_pred)
         ref_labels.append(label_data)
         
-        predicted_images = np.concatenate(predicted_images,axis=2)
-        ref_labels = np.concatenate(ref_labels,axis=2)
-        data = np.concatenate((predicted_images,ref_labels), axis=1)
-        params = (image_data, label_data, y_pred)
-        image_tensor = tf.py_function(
-            self._wrap_pltfn(
-                display_predictions_batch
-            ),
-            params,
-            tf.uint8
+        predicted_images = np.concatenate(
+            predicted_images,
+            axis=2
         )
-        image_tensor.set_shape([None, None, 4])
-        file_writer = tf.summary.create_file_writer(self.tensor_board_dir)
-        with file_writer.as_default():
-            tf.summary.image(
-                'epoch',
-                data,
-                step=self.last_epoch
-            )
-            tf.summary.image(
-                'Ground Truth and Prediction Comparison',
-                tf.expand_dims(image_tensor, 0),
-                step=self.last_epoch
-            )
-            tf.summary.flush()
-        image_tensor = None
-        return
+        ref_labels = np.concatenate(
+            ref_labels,
+            axis=2
+        )
+
+        data = np.concatenate(
+            (
+                predicted_images,
+                ref_labels
+            ),
+            axis=1
+        )
+        
+        return image_data, label_data, y_pred, data
     
     def _wrap_pltfn(self, plt_fn):
+        def save_fig(self, plt):
+            report_path = os.path.join(
+                self.report_dir ,
+                'report_epoch_{epoch}_{page}-{n_pages}_{date}.png'.format(
+                    date=datetime.datetime.now().strftime("%Y%m%d-%H%M%S"),
+                    epoch=self.last_epoch,
+                    page=p,
+                    n_pages=n_pages
+                )
+            )
+            plt.savefig(
+                report_path,
+                format='png'
+            )
         def plot(*args):
-            fig = plt.figure(figsize=(20, 10*self.batch_size))
+            fig = plt.figure(figsize=(20, 100))
             gs = fig.add_gridspec(1, 3)
-            fig, axs = plt.subplots(nrows=self.batch_size, ncols=3, figsize=(20, 100),
-                    subplot_kw={'xticks': [], 'yticks': []})
+            fig, axs = plt.subplots(
+                nrows=self.batch_size,
+                ncols=3,
+                figsize=(20, 100),
+                subplot_kw={'xticks': [], 'yticks': []}
+            )
             args = [fig, axs] + list(args)
             plt_fn(*args)
             buf = io.BytesIO()
-            self.email_epoch_report(plt)
-            plt.savefig(buf, format='png')
+            self.sample_image(plt)
+            plt.savefig(
+                buf,
+                format='png'
+            )
             buf.seek(0)
-            im = tf.image.decode_png(buf.getvalue(), channels=4)
+            im = tf.image.decode_png(
+                buf.getvalue(),
+                channels=4
+            )
             buf.close()
             plt.close('all')
             fig = None
@@ -96,80 +166,36 @@ class ImageHistory(tf.keras.callbacks.Callback):
             return im
         return plot
     
-    def email_epoch_report(self, plt):
-        text_path = os.path.join(
-                REPORT_DIR , 'metrics_report.txt'
-        )
-        report_path = os.path.join(
-                REPORT_DIR , 'report_epoch_{epoch}_{date}.png'.format(
-                date=datetime.datetime.now().strftime("%Y%m%d-%H%M%S"),
-                epoch=self.last_epoch
-            )
-        )
-        email_title = 'Training of epoch {epoch}/{total_epochs} of experiment 9 has finished'.format(
-            epoch=self.last_epoch,
-            total_epochs=self.n_epochs
-        )
-        epoch_report =         """
-        Metrics after epoch {epoch}:
-
-        Loss: {loss}
-        Accuracy: {acc}
-        Binary Crossentropy: {bce}
-        IoU: {iou}
-        Precision: {precision}
-        Recall: {recall}
-        F1-Score: {f1_score}
-        
-        """.format(
-            epoch=self.last_epoch,
-            acc=self.my_logs.get('accuracy'),
-            bce=self.my_logs.get('binary_crossentropy'),
-            loss=self.my_logs.get('loss'),
-            iou=self.my_logs.get('iou_score'),
-            precision=self.my_logs.get('precision'),
-            recall=self.my_logs.get('recall'),
-            f1_score=self.my_logs.get('f1-score')
-            
-        )
-        plt.savefig(
-            report_path,
-            format='png'
-        )
-
-        with open(text_path, "a") as myfile:
-            myfile.write(epoch_report)
-        # quickstart.send_epoch_report(email_title, epoch_report, report_path)
-        # pool.submit(
-        #     send_mail,
-        #     (
-        #         email_title,
-        #         epoch_report,
-        #         report_path
-        #     )
-        # )
-        
-        
-    
-def display_predictions_batch(plt, axs, *arg):
-    sample_image, sample_mask, predicted_mask = arg
-    for i in range(BATCH_SIZE):
+def display_predictions(plt, axs, page_number, *arg):
+    for i, sample_image, sample_mask, predicted_mask in enumerate(zip(arg)):
         axs[i][0].imshow(
             tf.keras.preprocessing.image.array_to_img(
-                sample_image[i]
+                sample_image
             )
         )
-        axs[i][0].set_title("Image {n}".format(n=i+1))
+        axs[i][0].set_title(
+            "Image {n}".format(
+                n=page_number+i+1
+            )
+        )
         axs[i][1].imshow(
             tf.keras.preprocessing.image.array_to_img(
-                sample_mask[i]
+                sample_mask
             )
         )
-        axs[i][1].set_title("Ground Truth {n}".format(n=i+1))
+        axs[i][1].set_title(
+            "Ground Truth {n}".format(
+                n=page_number+i+1
+            )
+        )
         axs[i][2].imshow(
             tf.keras.preprocessing.image.array_to_img(
-                predicted_mask[i]
+                predicted_mask
             )
         )
-        axs[i][2].set_title("Predicted {n}".format(n=i+1))
+        axs[i][2].set_title(
+            "Predicted {n}".format(
+                n=page_number+i+1
+            )
+        )
     plt.tight_layout()
