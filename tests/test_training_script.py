@@ -54,16 +54,21 @@ class Test_TestTrainingScript(unittest.TestCase):
             os.path.join(current_dir, 'testing_data', 'data', 'labels'),
             '.png'
         )
+        label_list = get_file_list(
+            os.path.join(current_dir, 'testing_data', 'data', 'labels'),
+            '.png'
+        )
         self.csv_train_ds_file = create_csv_file(
             os.path.join(current_dir, 'testing_data', 'csv_train_ds.csv'),
             [image_list[0]],
             [label_list[0]]
         )
+        
         self.csv_test_ds_file = create_csv_file(
             os.path.join(current_dir, 'testing_data', 'csv_test_ds.csv'),
-            [image_list[-1]],
-            [label_list[-1]]
-        )
+            [os.path.join('/', *image_list[-1].split('/')[-2::])],
+            [os.path.join('/', *label_list[-1].split('/')[-2::])]
+        )#different label list procedure to test loading data with data path prefix
         self.experiment_path = os.path.join(
                 current_dir,
                 'experiment_data'
@@ -100,11 +105,16 @@ class Test_TestTrainingScript(unittest.TestCase):
 
             'model' : json.loads('{"description": "test case", "backbone": "resnet18", "architecture": "Unet", "activation": "sigmoid", "use_imagenet_weights": true}'),
             'loss' : json.loads('{"class_name": "bce_dice_loss", "config": {}, "framework": "sm"}'),
-            'callbacks' : json.loads('{"items": [{"name": "ReduceLROnPlateau", "config": {"monitor": "val_loss", "factor": 0.2, "patience": 5, "min_lr": 0.001}}, {"name": "ModelCheckpoint", "config": {"filepath": "/data/teste/checkpoint.hdf5"}}]}'),
+            'callbacks' : json.loads('{"items": [{"name": "ReduceLROnPlateau", "config": {"monitor": "val_loss", "factor": 0.2, "patience": 5, "min_lr": 0.001}}, {"name": "ModelCheckpoint", "config": {"monitor": "iou_score", "save_best_only": false, "save_weights_only": false, "verbose": 1}}]}'),
             'metrics' : json.loads('{"items": [{"class_name": "iou_score", "config": {}, "framework": "sm"}, {"class_name": "precision", "config": {}, "framework": "sm"}, {"class_name": "recall", "config": {}, "framework": "sm"}, {"class_name": "f1_score", "config": {}, "framework": "sm"}, {"class_name": "f2_score", "config": {}, "framework": "sm"}, {"class_name": "LogCoshError", "config": {}, "framework": "tf.keras"}, {"class_name": "KLDivergence", "config": {}, "framework": "tf.keras"}, {"class_name": "MeanIoU", "config": {"num_classes": 2}, "framework": "tf.keras"}]}'),
         }
         self.settings_json = os.path.join(
             current_dir, 'testing_data', 'settings.json'
+        )
+        settings_dict['test_dataset']['base_path'] = os.path.join(
+            os.path.dirname(__file__),
+            'testing_data',
+            'data'
         )
         with open(self.settings_json, 'w') as json_file:
             json_file.write(json.dumps(settings_dict))

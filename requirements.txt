@@ -1,6 +1,5 @@
-tensorflow
-git+https://github.com/phborba/efficientnet
-git+https://github.com/phborba/segmentation_models
+tensorflow>=2.3.0
+segmentation_models
 pillow
 matplotlib
 numpy

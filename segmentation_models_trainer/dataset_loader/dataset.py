@@ -19,12 +19,13 @@
  *                                                                         *
  ****
 """
-
+import tensorflow as tf
+import os
 from dataclasses import dataclass, field
 from dataclasses_jsonschema import JsonSchemaMixin
 from typing import Any, List
 from collections import OrderedDict
-import tensorflow as tf
+
 
 IMAGE_DTYPE = {
     'float32' : tf.float32,
@@ -121,10 +122,11 @@ class ImageAugumentation(JsonSchemaMixin):
 @dataclass
 class Dataset(JsonSchemaMixin):
     name: str
-    file_path: str
     n_classes: int
     dataset_size: int
     augmentation_list: List[ImageAugumentation]
+    file_path: str
+    base_path: str = ''
     cache: Any = True
     shuffle: bool = True
     shuffle_buffer_size: int = 10000
@@ -133,8 +135,8 @@ class Dataset(JsonSchemaMixin):
     num_paralel_reads: int = 4
     img_dtype: str = 'float32'
     img_format: str = 'png'
-    img_width: int = 256
-    img_length: int = 256
+    img_width: int = 512
+    img_length: int = 512
     img_bands: int = 3
     mask_bands: int = 1
     use_ds_width_len: bool = False
@@ -149,16 +151,31 @@ class Dataset(JsonSchemaMixin):
         )
 
     def get_tf_dataset(self, batch_size):
+        @tf.function
         def process_csv_entry(entry):
             width = entry['width'] if self.use_ds_width_len else self.img_width
             length = entry['length'] if self.use_ds_width_len else self.img_length
             label = tf.io.read_file(
-                entry['label_path'][0]
+                entry['label_path'][0] if self.base_path == '' \
+                    else tf.strings.join(
+                        [
+                            self.base_path,
+                            entry['label_path'][0]
+                        ],
+                        separator=''
+                    )
             )
             label = decode_img(label, width, length, channels=1)
             # load the raw data from the file as a string
             img = tf.io.read_file(
-                entry['image_path'][0]
+                entry['label_path'][0] if self.base_path == '' \
+                    else tf.strings.join(
+                        [
+                            self.base_path,
+                            entry['label_path'][0]
+                        ],
+                        separator=''
+                    )
             )
             img = decode_img(img, width, length)
             img, label = augment_image(img, label)
@@ -186,7 +203,10 @@ class Dataset(JsonSchemaMixin):
             ds = ds.repeat()
             # `prefetch` lets the dataset fetch batches in the background while the model
             # is training.
-            ds = ds.prefetch(buffer_size=tf.data.experimental.AUTOTUNE if self.autotune == -1 else self.autotune)
+            ds = ds.prefetch(
+                buffer_size=tf.data.experimental.AUTOTUNE \
+                    if self.autotune == -1 else self.autotune
+            )
             return ds
         
         def augment_image(img, label):
@@ -205,7 +225,8 @@ class Dataset(JsonSchemaMixin):
         )
         labeled_ds = ds.map(
             process_csv_entry,
-            num_parallel_calls=tf.data.experimental.AUTOTUNE if self.autotune == -1 else self.autotune
+            num_parallel_calls=tf.data.experimental.AUTOTUNE if self.autotune == -1 \
+                else self.autotune
         )
         prepared_ds = prepare_for_training(
             labeled_ds,

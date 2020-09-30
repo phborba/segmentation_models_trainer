@@ -54,3 +54,17 @@ class CallbackFactory:
             return tf.keras.callbacks.TensorBoard(
                 **parameters
             )
+
+if __name__ == '__main__':
+    img_callback = CallbackFactory.get_callback(
+        'ImageHistory',
+        parameters={
+            'tensor_board_dir' : '/teste',
+            'data' : None,
+            'n_epochs' : 4,
+            'draw_interval' : 1,
+            'batch_size' : 1,
+            'page_size' : 1,
+            'report_dir': '/teste'
+        }
+    )

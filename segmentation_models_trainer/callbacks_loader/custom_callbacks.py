@@ -35,19 +35,29 @@ class ImageHistory(tf.keras.callbacks.Callback):
 
     def __init__(self, params, **kwargs):
         super(ImageHistory, self).__init__(**kwargs)
-        self.tensor_board_dir = params['tensor_board_dir']
-        self.data = params['data']
-        self.last_epoch = 0 if 'current_epoch' not in params \
-                            else params['current_epoch']
-        self.n_epochs = params['n_epochs']
-        self.draw_interval = params['draw_interval']
-        self.batch_size = params['batch_size']
-        self.page_size = params['page_size']
-        self.report_dir = params['report_dir']
+        self.tensorboard_dir = params['tensorboard_dir'] if 'tensorboard_dir' in params else None
+        self.dataset = params['dataset'] if 'dataset' in params else None
+        self.n_epochs = params['n_epochs'] if 'n_epochs' in params else 1
+        self.draw_interval = params['draw_interval'] if 'draw_interval' in params else 1
+        self.batch_size = params['batch_size'] if 'batch_size' in params else 1
+        self.page_size = params['page_size'] if 'page_size' in params else self.batch_size
+        self.report_dir = params['report_dir'] if 'report_dir' in params else None
     
+    def set_params(self, params):
+        if 'dataset' in params:
+            self.dataset = params['dataset']
+        if 'tensorboard_dir' in params:
+            self.tensorboard_dir = params['tensorboard_dir']
+        if 'n_epochs' in params:
+            self.n_epochs = params['n_epochs']
+        if 'batch_size' in params:
+            self.batch_size = params['batch_size']
+        if 'report_dir' in params:
+            self.report_dir = params['report_dir']
+
     def on_epoch_end(self, epoch, logs=None):
         self.my_logs = logs or {}
-        self.last_epoch += 1
+        self.last_epoch = epoch
 
         image_data, label_data, y_pred, data = self.predict_data()
         args = [
@@ -57,7 +67,7 @@ class ImageHistory(tf.keras.callbacks.Callback):
         ] * self.page_size
 
         file_writer = tf.summary.create_file_writer(
-            self.tensor_board_dir
+            self.tensorboard_dir
         )
         n_pages = np.ceil(
             self.batch_size / self.page_size
@@ -108,7 +118,7 @@ class ImageHistory(tf.keras.callbacks.Callback):
         predicted_images = []
         ref_labels = []
         image_data, label_data = list(
-            self.data.take(1)
+            self.dataset.take(1)
         )[0]
         #took one batch
         y_pred = self.model.predict(image_data)
