@@ -123,16 +123,21 @@ setup(
     extras_require=EXTRAS,
     dependency_links=DEP_LINKS,
     include_package_data=True,
-    license='MIT',
+    license='GPL',
     classifiers=[
         # Trove classifiers
         # Full list: https://pypi.python.org/pypi?%3Aaction=list_classifiers
-        'License :: OSI Approved :: MIT License',
+        'Development Status :: 4 - Beta',
+        'Intended Audience :: Developers',
+        'Operating System :: OS Independent',
+        'Topic :: Software Development :: Libraries :: Python Modules',
+        'License :: OSI Approved :: GNU General Public License v2 (GPLv2)',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy'
     ],
+    keywords='tensorflow keras semantic-segmentation deep learning',
     # $ setup.py publish support.
     cmdclass={
         'upload': UploadCommand,
