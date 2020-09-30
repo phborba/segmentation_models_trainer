@@ -61,19 +61,18 @@ class Experiment(JsonSchemaMixin):
 
         self.create_data_folders()
 
-        BATCH_SIZE = self.hyperparameters.batch_size * strategy.num_replicas_in_sync \
+        self.BATCH_SIZE = self.hyperparameters.batch_size * strategy.num_replicas_in_sync \
             if self.use_multiple_gpus else self.hyperparameters.batch_size
         n_classes = self.train_dataset.n_classes
         input_shape = self.train_dataset.get_img_input_shape()
         
-        train_ds = self.train_dataset.get_tf_dataset(BATCH_SIZE)
-        test_ds = self.test_dataset.get_tf_dataset(BATCH_SIZE)
+        train_ds = self.train_dataset.get_tf_dataset(self.BATCH_SIZE)
+        test_ds = self.test_dataset.get_tf_dataset(self.BATCH_SIZE)
 
-        training_steps_per_epoch = int( np.ceil(self.train_dataset.dataset_size / BATCH_SIZE) )
-        test_steps_per_epoch = int( np.ceil(self.test_dataset.dataset_size / BATCH_SIZE) )
+        self.training_steps_per_epoch = int( np.ceil(self.train_dataset.dataset_size / self.BATCH_SIZE) )
+        self.test_steps_per_epoch = int( np.ceil(self.test_dataset.dataset_size / self.BATCH_SIZE) )
 
-        def train_model(epochs, save_weights_path, encoder_freeze, load_weights=None):
-            callback_list = self.callbacks.get_tf_objects()
+        def train_model(epochs, save_weights_path, encoder_freeze, callback_list, load_weights=None):
             with strategy.scope():
                 model = self.model.get_model(
                     n_classes,
@@ -90,11 +89,11 @@ class Experiment(JsonSchemaMixin):
                 )
             model.fit(
                 train_ds,
-                batch_size=BATCH_SIZE,
-                steps_per_epoch=training_steps_per_epoch,
+                batch_size=self.BATCH_SIZE,
+                steps_per_epoch=self.training_steps_per_epoch,
                 epochs=epochs,
                 validation_data=test_ds,
-                validation_steps=test_steps_per_epoch,
+                validation_steps=self.test_steps_per_epoch,
                 callbacks=callback_list
             )
             model.save_weights(
@@ -106,6 +105,12 @@ class Experiment(JsonSchemaMixin):
             warmup_path = os.path.join(
                 self.SAVE_PATH,
                 'warmup_experiment_{name}.h5'.format(name=self.name)
+            )
+            callback_list = self.get_initialized_callbacks(
+                epochs=self.warmup_epochs,
+                warmup=True,
+                data_ds=train_ds,
+
             )
             model = train_model(
                 epochs=self.warmup_epochs,
@@ -146,6 +151,38 @@ class Experiment(JsonSchemaMixin):
         self.REPORT_DIR = self.test_and_create_folder(
             os.path.join(DATA_DIR, 'report_img')
         )
+    
+    def get_initialized_callbacks(self, epochs, data_ds, warmup=False):
+        tf_callback_list = []
+        for callback in self.callbacks:
+            if callback.name == 'BackupAndRestore':
+                callback.config.update({'backup_dir':self.CHECKPOINT_PATH})
+            elif callback.name == 'ImageHistory':
+                callback.config.update(
+                    {
+                        'dataset' : data_ds,
+                        'tensorboard_dir' : self.LOG_PATH,
+                        'n_epochs' : epochs,
+                        'batch_size' : self.BATCH_SIZE,
+                        'report_dir' : self.REPORT_DIR
+                    }
+                )
+            elif callback.name == 'ModelCheckpoint':
+                callback.config.update(
+                    {
+                        'filepath': os.path.join(
+                            self.CHECKPOINT_PATH,
+                            "model{name}-{epoch:02d}-{".format(
+                                name='_warmup' if warmup else ''
+                            )+ callback.config.monitor+':.2f}.hdf5'
+                        ),
+                        'save_freq': self.checkpoint_frequency * self.training_steps_per_epoch
+                    }
+                )
+            tf_callback_list.append(
+                callback.get_callback()
+            )
+        return tf_callback_list
 
     @staticmethod
     def test_and_create_folder(path):

@@ -63,4 +63,17 @@ class Test_TestCallbacks(unittest.TestCase):
             new_callback
         )
     
-    
+class Test_TestCustomCallbacks(Test_TestCallbacks):
+    callback = Callback(
+        name='ImageHistory',
+        config= {
+            'monitor' : 'val_loss',
+            'factor' : 0.2,
+            'patience' : 5,
+            'min_lr' : 0.001
+        }
+    )
+
+if __name__ == '__main__':
+    x = Test_TestCustomCallbacks()
+    x

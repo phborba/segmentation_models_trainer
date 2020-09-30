@@ -94,3 +94,16 @@ if __name__ == '__main__':
     y
     z = CallbackList(y)
     print(z.to_json())
+    w = Callback(
+        'ImageHistory',
+        config={
+            'tensor_board_dir' : '/teste',
+            'data' : None,
+            'n_epochs' : 4,
+            'draw_interval' : 1,
+            'batch_size' : 1,
+            'page_size' : 1,
+            'report_dir': '/teste'
+        }
+    )
+    w
