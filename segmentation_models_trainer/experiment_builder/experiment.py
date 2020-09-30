@@ -172,9 +172,9 @@ class Experiment(JsonSchemaMixin):
                     {
                         'filepath': os.path.join(
                             self.CHECKPOINT_PATH,
-                            "model{name}-{epoch:02d}-{".format(
+                            "model{name}".format(
                                 name='_warmup' if warmup else ''
-                            )+ callback.config.monitor+':.2f}.hdf5'
+                            ) + "-{epoch:02d}-{" + callback.config.monitor+':.2f}.hdf5'
                         ),
                         'save_freq': self.checkpoint_frequency * self.training_steps_per_epoch
                     }
