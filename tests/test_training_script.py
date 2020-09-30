@@ -54,16 +54,21 @@ class Test_TestTrainingScript(unittest.TestCase):
             os.path.join(current_dir, 'testing_data', 'data', 'labels'),
             '.png'
         )
+        label_list = get_file_list(
+            os.path.join(current_dir, 'testing_data', 'data', 'labels'),
+            '.png'
+        )
         self.csv_train_ds_file = create_csv_file(
             os.path.join(current_dir, 'testing_data', 'csv_train_ds.csv'),
             [image_list[0]],
             [label_list[0]]
         )
+        
         self.csv_test_ds_file = create_csv_file(
             os.path.join(current_dir, 'testing_data', 'csv_test_ds.csv'),
-            [image_list[-1]],
-            [label_list[-1]]
-        )
+            [os.path.join('/', *image_list[-1].split('/')[-2::])],
+            [os.path.join('/', *label_list[-1].split('/')[-2::])]
+        )#different label list procedure to test loading data with data path prefix
         self.experiment_path = os.path.join(
                 current_dir,
                 'experiment_data'
@@ -105,6 +110,11 @@ class Test_TestTrainingScript(unittest.TestCase):
         }
         self.settings_json = os.path.join(
             current_dir, 'testing_data', 'settings.json'
+        )
+        settings_dict['test_dataset']['base_path'] = os.path.join(
+            os.path.dirname(__file__),
+            'testing_data',
+            'data'
         )
         with open(self.settings_json, 'w') as json_file:
             json_file.write(json.dumps(settings_dict))
