@@ -73,6 +73,14 @@ class Test_TestCustomCallbacks(Test_TestCallbacks):
             'min_lr' : 0.001
         }
     )
+    json_dict = json.loads('{"name": "ImageHistory", "config": {"monitor": "val_loss", "factor": 0.2, "patience": 5, "min_lr": 0.001}}')
+    def test_create_instance(self):
+        """[summary]
+        Tests instance creation
+        """          
+        self.assertEqual(
+            self.callback.name, 'ImageHistory'
+        )
 
 if __name__ == '__main__':
     x = Test_TestCustomCallbacks()

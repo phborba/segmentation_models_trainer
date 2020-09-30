@@ -75,13 +75,7 @@ class Test_TestExperiment(unittest.TestCase):
         self.assertEqual(
             self.experiment.use_multiple_gpus, False
         )
-    
-    def test_export_instance(self):
-        self.assertEqual(
-            self.experiment.to_dict(),
-            self.json_dict
-        )
-    
+
     def test_import_instance(self):
         new_experiment = Experiment.from_dict(
             self.json_dict
