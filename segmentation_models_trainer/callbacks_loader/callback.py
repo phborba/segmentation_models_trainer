@@ -30,9 +30,6 @@ class Callback(JsonSchemaMixin):
     name: str
     config: dict
 
-    def __post_init__(self):
-        self.callback_obj = self.get_callback()
-
     @staticmethod
     def validate_callback_name(name):
         if name not in [

@@ -87,6 +87,8 @@ class Experiment(JsonSchemaMixin):
                     loss=sm.losses.bce_jaccard_loss,
                     metrics=metric_list
                 )
+                if load_weights is not None:
+                    model.load_weights(load_weights)
             model.fit(
                 train_ds,
                 batch_size=self.BATCH_SIZE,
@@ -108,14 +110,14 @@ class Experiment(JsonSchemaMixin):
             )
             callback_list = self.get_initialized_callbacks(
                 epochs=self.warmup_epochs,
-                warmup=True,
                 data_ds=train_ds,
-
+                warmup=True
             )
             model = train_model(
                 epochs=self.warmup_epochs,
                 save_weights_path=warmup_path,
-                encoder_freeze=True
+                encoder_freeze=True,
+                callback_list=callback_list
             )
         final_save_path = os.path.join(
             self.SAVE_PATH,
@@ -124,10 +126,16 @@ class Experiment(JsonSchemaMixin):
                 epochs=self.epochs
             )
         )
+        callback_list = self.get_initialized_callbacks(
+            epochs=self.warmup_epochs,
+            data_ds=train_ds,
+            warmup=True
+        )
         model = train_model(
             epochs=self.epochs,
             save_weights_path=final_save_path,
             encoder_freeze=False,
+            callback_list=callback_list,
             load_weights=warmup_path if self.warmup_epochs > 0 else None
         )
     
@@ -174,7 +182,7 @@ class Experiment(JsonSchemaMixin):
                             self.CHECKPOINT_PATH,
                             "model{name}".format(
                                 name='_warmup' if warmup else ''
-                            ) + "-{epoch:02d}-{" + callback.config.monitor+':.2f}.hdf5'
+                            ) + "-{epoch:02d}-{" + callback.config["monitor"]+':.2f}.hdf5'
                         ),
                         'save_freq': self.checkpoint_frequency * self.training_steps_per_epoch
                     }
