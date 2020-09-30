@@ -80,11 +80,10 @@ class Experiment(JsonSchemaMixin):
                     input_shape=input_shape
                 )
                 opt = self.hyperparameters.optimizer.tf_object
-                #TODO metrics and loss fields into compile
                 metric_list = self.metrics.get_tf_objects()
                 model.compile(
                     opt,
-                    loss=sm.losses.bce_jaccard_loss,
+                    loss=self.loss.loss_obj,
                     metrics=metric_list
                 )
                 if load_weights is not None:
@@ -180,9 +179,7 @@ class Experiment(JsonSchemaMixin):
                     {
                         'filepath': os.path.join(
                             self.CHECKPOINT_PATH,
-                            "model{name}".format(
-                                name='_warmup' if warmup else ''
-                            ) + "-{epoch:02d}-{" + callback.config["monitor"]+':.2f}.hdf5'
+                            "model-{epoch:04d}.ckpt" if not warmup else "warmup_model-{epoch:04d}.ckpt"
                         ),
                         'save_freq': self.checkpoint_frequency * self.training_steps_per_epoch
                     }
