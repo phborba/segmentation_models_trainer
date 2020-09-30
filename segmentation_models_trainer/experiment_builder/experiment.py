@@ -76,7 +76,7 @@ class Experiment(JsonSchemaMixin):
             with strategy.scope():
                 model = self.model.get_model(
                     n_classes,
-                    encoder_freeze=True,
+                    encoder_freeze=encoder_freeze,
                     input_shape=input_shape
                 )
                 opt = self.hyperparameters.optimizer.tf_object
@@ -129,7 +129,7 @@ class Experiment(JsonSchemaMixin):
         callback_list = self.get_initialized_callbacks(
             epochs=self.warmup_epochs,
             data_ds=train_ds,
-            warmup=True
+            warmup=False
         )
         model = train_model(
             epochs=self.epochs,
