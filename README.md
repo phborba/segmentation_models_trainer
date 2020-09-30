@@ -2,6 +2,7 @@
 
 ![Python application](https://github.com/phborba/segmentation_models_trainer/workflows/Python%20application/badge.svg)
 [![maintainer](https://img.shields.io/badge/maintainer-phborba-blue.svg)](https://github.com/phborba)
+[![DOI](https://zenodo.org/badge/294972255.svg)](https://zenodo.org/badge/latestdoi/294972255)
 
 Framework to train semantic segmentation models on TensorFlow using json files as input, as follows:
 
