@@ -154,7 +154,7 @@ class Experiment(JsonSchemaMixin):
     
     def get_initialized_callbacks(self, epochs, data_ds, warmup=False):
         tf_callback_list = []
-        for callback in self.callbacks:
+        for callback in self.callbacks.items:
             if callback.name == 'BackupAndRestore':
                 callback.config.update({'backup_dir':self.CHECKPOINT_PATH})
             elif callback.name == 'ImageHistory':
