@@ -155,7 +155,7 @@ class Dataset(JsonSchemaMixin):
             if aug_item.name == "random_crop":
                 return (
                     aug_item.parameters["crop_width"],
-                    aug_item.parameters["crop_length"],
+                    aug_item.parameters["crop_height"],
                     self.img_bands
                 )
         #if code gets here, no random_crop is used
