@@ -28,6 +28,7 @@ Framework to train semantic segmentation models on TensorFlow using json files a
         "name": "train_ds",
         "file_path": "/data/train_ds.csv",
         "n_classes": 1,
+        "dataset_size": 1000,
         "augmentation_list": [
             {
                 "name": "random_crop",
@@ -59,6 +60,7 @@ Framework to train semantic segmentation models on TensorFlow using json files a
         "name": "test_ds",
         "file_path": "/data/test_ds.csv",
         "n_classes": 1,
+        "dataset_size": 200,
         "augmentation_list": [
             {
                 "name": "random_crop",
