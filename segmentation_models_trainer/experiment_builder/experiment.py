@@ -64,7 +64,7 @@ class Experiment(JsonSchemaMixin):
         self.BATCH_SIZE = self.hyperparameters.batch_size * strategy.num_replicas_in_sync \
             if self.use_multiple_gpus else self.hyperparameters.batch_size
         n_classes = self.train_dataset.n_classes
-        input_shape = self.train_dataset.get_img_input_shape()
+        input_shape = self.train_dataset.get_network_input_shape()
         
         train_ds = self.train_dataset.get_tf_dataset(self.BATCH_SIZE)
         test_ds = self.test_dataset.get_tf_dataset(self.BATCH_SIZE)
