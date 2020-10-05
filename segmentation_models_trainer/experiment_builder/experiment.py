@@ -184,6 +184,12 @@ class Experiment(JsonSchemaMixin):
                         'save_freq': self.checkpoint_frequency * self.training_steps_per_epoch
                     }
                 )
+            elif callback.name == 'TensorBoard':
+                callback.config.update(
+                    {
+                        'log_dir' : self.LOG_PATH
+                    }
+                )
             tf_callback_list.append(
                 callback.get_callback()
             )

@@ -60,14 +60,18 @@ class Test_TestTrainingScript(unittest.TestCase):
         )
         self.csv_train_ds_file = create_csv_file(
             os.path.join(current_dir, 'testing_data', 'csv_train_ds.csv'),
-            [image_list[0]],
-            [label_list[0]]
+            image_list[0:5],
+            label_list[0:5]
         )
         
         self.csv_test_ds_file = create_csv_file(
             os.path.join(current_dir, 'testing_data', 'csv_test_ds.csv'),
-            [os.path.join('/', *image_list[-1].split('/')[-2::])],
-            [os.path.join('/', *label_list[-1].split('/')[-2::])]
+            [
+                os.path.join('/', *i.split('/')[-2::]) for i in image_list[5::]
+            ],
+            [
+                os.path.join('/', *i.split('/')[-2::]) for i in label_list[5::]
+            ]
         )#different label list procedure to test loading data with data path prefix
         self.experiment_path = os.path.join(
                 current_dir,
@@ -79,13 +83,13 @@ class Test_TestTrainingScript(unittest.TestCase):
             )
         settings_dict = {
             'name' : "test",
-            'epochs' : 4,
+            'epochs' : 2,
             'experiment_data_path' : self.experiment_path,
             'checkpoint_frequency' : 1,
             'warmup_epochs' : 1,
             'use_multiple_gpus' : False,
             'hyperparameters' : {
-                'batch_size' : 1,
+                'batch_size' : 2,
                 'optimizer' : {
                     'name' : "Adam",
                     'config' : {
@@ -95,17 +99,17 @@ class Test_TestTrainingScript(unittest.TestCase):
             },
             'train_dataset' : json.loads(
                 '''
-                {"name": "train_ds", "file_path": "'''+self.csv_train_ds_file+'''", "n_classes": 1, "dataset_size": 1, "augmentation_list": [{"name": "random_crop", "parameters": {"crop_width": 256, "crop_height": 256}}, {"name": "per_image_standardization", "parameters": {}}], "cache": false, "shuffle": false, "shuffle_buffer_size": 1, "shuffle_csv": true, "ignore_errors": true, "num_paralel_reads": 1, "img_dtype": "float32", "img_format": "png", "img_width": 256, "img_length": 256, "img_bands": 3, "mask_bands": 1, "use_ds_width_len": false, "autotune": -1, "distributed_training": false}
+                {"name": "train_ds", "file_path": "'''+self.csv_train_ds_file+'''", "n_classes": 1, "dataset_size": 5, "augmentation_list": [{"name": "random_crop", "parameters": {"crop_width": 256, "crop_height": 256}}, {"name": "per_image_standardization", "parameters": {}}], "cache": false, "shuffle": false, "shuffle_buffer_size": 1, "shuffle_csv": true, "ignore_errors": true, "num_paralel_reads": 1, "img_dtype": "float32", "img_format": "png", "img_width": 256, "img_length": 256, "img_bands": 3, "mask_bands": 1, "use_ds_width_len": false, "autotune": -1, "distributed_training": false}
                 '''
             ),
 
             'test_dataset' : json.loads(
-                '''{"name": "test_ds", "file_path": "'''+self.csv_test_ds_file+'''", "n_classes": 1, "dataset_size": 1, "augmentation_list": [{"name": "random_crop", "parameters": {"crop_width": 256, "crop_height": 256}}, {"name": "per_image_standardization", "parameters": {}}], "cache": false, "shuffle": false, "shuffle_buffer_size": 1, "shuffle_csv": true, "ignore_errors": true, "num_paralel_reads": 1, "img_dtype": "float32", "img_format": "png", "img_width": 256, "img_length": 256, "img_bands": 3, "mask_bands": 1, "use_ds_width_len": false, "autotune": -1, "distributed_training": false}'''
+                '''{"name": "test_ds", "file_path": "'''+self.csv_test_ds_file+'''", "n_classes": 1, "dataset_size": 5, "augmentation_list": [{"name": "random_crop", "parameters": {"crop_width": 256, "crop_height": 256}}, {"name": "per_image_standardization", "parameters": {}}], "cache": false, "shuffle": false, "shuffle_buffer_size": 1, "shuffle_csv": true, "ignore_errors": true, "num_paralel_reads": 1, "img_dtype": "float32", "img_format": "png", "img_width": 256, "img_length": 256, "img_bands": 3, "mask_bands": 1, "use_ds_width_len": false, "autotune": -1, "distributed_training": false}'''
             ),
 
             'model' : json.loads('{"description": "test case", "backbone": "resnet18", "architecture": "Unet", "activation": "sigmoid", "use_imagenet_weights": true}'),
             'loss' : json.loads('{"class_name": "bce_dice_loss", "config": {}, "framework": "sm"}'),
-            'callbacks' : json.loads('{"items": [{"name": "ReduceLROnPlateau", "config": {"monitor": "val_loss", "factor": 0.2, "patience": 5, "min_lr": 0.001}}, {"name": "ModelCheckpoint", "config": {"monitor": "iou_score", "save_best_only": false, "save_weights_only": false, "verbose": 1}}]}'),
+            'callbacks' : json.loads('{"items": [{"name": "TensorBoard", "config": {"update_freq": "epoch"}}, {"name": "ReduceLROnPlateau", "config": {"monitor": "val_loss", "factor": 0.2, "patience": 5, "min_lr": 0.001}}, {"name": "ModelCheckpoint", "config": {"monitor": "iou_score", "save_best_only": false, "save_weights_only": false, "verbose": 1}}, {"name": "ImageHistory", "config": {"draw_interval": 1, "page_size": 2}}]}'),
             'metrics' : json.loads('{"items": [{"class_name": "iou_score", "config": {}, "framework": "sm"}, {"class_name": "precision", "config": {}, "framework": "sm"}, {"class_name": "recall", "config": {}, "framework": "sm"}, {"class_name": "f1_score", "config": {}, "framework": "sm"}, {"class_name": "f2_score", "config": {}, "framework": "sm"}, {"class_name": "LogCoshError", "config": {}, "framework": "tf.keras"}, {"class_name": "KLDivergence", "config": {}, "framework": "tf.keras"}, {"class_name": "MeanIoU", "config": {"num_classes": 2}, "framework": "tf.keras"}]}'),
         }
         self.settings_json = os.path.join(
