@@ -152,10 +152,10 @@ class Dataset(JsonSchemaMixin):
     
     def get_network_input_shape(self):
         for aug_item in self.augmentation_list:
-            if "random_crop" in aug_item["name"]:
+            if aug_item.name == "random_crop":
                 return (
-                    aug_item["parameters"]["crop_width"],
-                    aug_item["parameters"]["crop_length"],
+                    aug_item.parameters["crop_width"],
+                    aug_item.parameters["crop_length"],
                     self.img_bands
                 )
         #if code gets here, no random_crop is used
