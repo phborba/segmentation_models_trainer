@@ -219,3 +219,17 @@ Training usage:
 python train.py --pipeline_config_path=my_experiment.json
 
 ```
+
+Citing:
+```
+@software{philipe_borba_2020_4060390,
+  author       = {Philipe Borba},
+  title        = {phborba/segmentation\_models\_trainer: First Release},
+  month        = sep,
+  year         = 2020,
+  publisher    = {Zenodo},
+  version      = {v0.1},
+  doi          = {10.5281/zenodo.4060390},
+  url          = {https://doi.org/10.5281/zenodo.4060390}
+}
+```
