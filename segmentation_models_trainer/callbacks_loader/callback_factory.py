@@ -32,7 +32,9 @@ class CallbackFactory:
         available_callbacks = [
             'ReduceLROnPlateau',
             'ModelCheckpoint',
-            'TensorBoard'
+            'TensorBoard',
+            'BackupAndRestore',
+            'CSVLogger'
         ] + [
             i for i in smt.callbacks_loader.custom_callbacks.__all__
         ]
@@ -52,6 +54,14 @@ class CallbackFactory:
             )
         if name == 'TensorBoard':
             return tf.keras.callbacks.TensorBoard(
+                **parameters
+            )
+        if name == 'BackupAndRestore':
+            return tf.keras.callbacks.experimental.BackupAndRestore(
+                **parameters
+            )
+        if name == 'CSVLogger':
+            return tf.keras.callbacks.CSVLogger(
                 **parameters
             )
 

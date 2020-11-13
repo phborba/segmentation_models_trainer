@@ -147,7 +147,7 @@ class Experiment(JsonSchemaMixin):
             os.path.join(DATA_DIR, 'cache', 'train_cache')
         )
         self.LOG_PATH = self.test_and_create_folder(
-            os.path.join(DATA_DIR,'logs', 'scalars')
+            os.path.join(DATA_DIR, 'logs', 'scalars')
         )
         self.CHECKPOINT_PATH = self.test_and_create_folder(
             os.path.join(DATA_DIR, 'logs', 'checkpoints')
@@ -188,6 +188,14 @@ class Experiment(JsonSchemaMixin):
                 callback.config.update(
                     {
                         'log_dir' : self.LOG_PATH
+                    }
+                )
+            elif callback.name == 'CSVLogger':
+                callback.config.update(
+                    {
+                        'filename' : os.path.join(self.LOG_PATH, 'metrics_per_epoch.log'),
+                        'separator' : ';',
+                        'append' : True
                     }
                 )
             tf_callback_list.append(
