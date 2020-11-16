@@ -74,7 +74,13 @@ class SegmentationModel(JsonSchemaMixin):
             encoder_weights='imagenet' if self.use_imagenet_weights else None,
             encoder_freeze=encoder_freeze,
             classes=n_classes
-        )
+        ) if self.input_width is None and self.input_height is None and self.input_bands is None else \
+            imported_model(
+                self.backbone,
+                encoder_weights='imagenet' if self.use_imagenet_weights else None,
+                encoder_freeze=encoder_freeze,
+                classes=n_classes
+            )
 
 
 if __name__ == '__main__':
