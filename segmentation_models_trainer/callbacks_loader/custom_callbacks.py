@@ -192,7 +192,7 @@ class ImageHistory(tf.keras.callbacks.Callback):
     
     def save_plot(self, plt, report_path):
         plt.savefig(
-            report_path,
+            report_path.decode(),
             format='png'
         )
     
