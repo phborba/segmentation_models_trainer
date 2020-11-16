@@ -163,7 +163,6 @@ class ImageHistory(tf.keras.callbacks.Callback):
     def _wrap_pltfn(self, plt_fn):
         def plot(*args):
             fig = plt.figure(figsize=(10, 20))
-            gs = fig.add_gridspec(1, 3)
             *params, batch_size, current_page, report_path = args
             fig, axs = plt.subplots(
                 nrows=batch_size.numpy(),
@@ -184,6 +183,10 @@ class ImageHistory(tf.keras.callbacks.Callback):
                 channels=4
             )
             buf.close()
+            plt.savefig(
+                report_path,
+                format='png'
+            )
             plt.close('all')
             fig = None
             axs = None
