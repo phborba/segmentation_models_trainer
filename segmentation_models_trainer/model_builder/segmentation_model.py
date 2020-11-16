@@ -37,7 +37,7 @@ class SegmentationModel(JsonSchemaMixin):
     use_imagenet_weights: bool = True
     input_width: Any = None
     input_height: Any = None
-    input_bands: Any = None
+    input_bands: Any = 3
     # config: dict = {}
 
     def __post_init__(self):

@@ -33,7 +33,7 @@ class Test_TestSegmentationModel(unittest.TestCase):
         backbone='resnet18',
         architecture='Unet'
     )
-    json_dict = json.loads('{"description": "test case", "backbone": "resnet18", "architecture": "Unet", "activation": "sigmoid", "use_imagenet_weights": true}')
+    json_dict = json.loads('{"description": "test case", "backbone": "resnet18", "architecture": "Unet", "activation": "sigmoid", "use_imagenet_weights": true, "input_bands": 3}')
 
     def test_create_instance(self):
         """[summary]
