@@ -37,7 +37,7 @@ class SegmentationModel(JsonSchemaMixin):
     use_imagenet_weights: bool = True
     input_width: any = None
     input_height: any = None
-    input_bands: any = None
+    input_bands: int = 3
     # config: dict = {}
 
     def __post_init__(self):
@@ -64,8 +64,6 @@ class SegmentationModel(JsonSchemaMixin):
             [KerasModel]: Keras model implemented using either the 
             segmentation_model lib or custom architectures.
         """
-        if self.input_width is not None or self.input_height is not None or self.input_bands is not None:
-            input_shape = (self.input_width, self.input_height, self.input_bands)
         # input_shape = (None, None, 3) if input_shape is None else input_shape
         imported_model = getattr(
             sm,
@@ -75,15 +73,10 @@ class SegmentationModel(JsonSchemaMixin):
         print(input_shape)
         return imported_model(
             self.backbone,
-            input_shape=input_shape,
+            input_shape=(self.input_width, self.input_height, self.input_bands),
             encoder_weights='imagenet' if self.use_imagenet_weights else None,
             encoder_freeze=encoder_freeze
-        ) if input_shape is not None else \
-            imported_model(
-                self.backbone,
-                encoder_weights='imagenet' if self.use_imagenet_weights else None,
-                encoder_freeze=encoder_freeze
-            )
+        )
 
 
 if __name__ == '__main__':
