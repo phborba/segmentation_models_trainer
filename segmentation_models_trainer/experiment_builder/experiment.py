@@ -50,13 +50,15 @@ class Experiment(JsonSchemaMixin):
     loss: Loss
     callbacks: CallbackList
     metrics: MetricList
+    use_xla: bool = True
 
     def train(self):
         gpu_devices = tf.config.experimental.list_physical_devices('GPU')
         for device in gpu_devices:
             tf.config.experimental.set_memory_growth(device, True)
         #using XLA
-        tf.config.optimizer.set_jit(True)
+        if self.use_xla:
+            tf.config.optimizer.set_jit(True)
         strategy = tf.distribute.MirroredStrategy()
 
         self.create_data_folders()
