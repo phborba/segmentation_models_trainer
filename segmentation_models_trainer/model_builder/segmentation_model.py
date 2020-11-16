@@ -64,18 +64,16 @@ class SegmentationModel(JsonSchemaMixin):
             [KerasModel]: Keras model implemented using either the 
             segmentation_model lib or custom architectures.
         """
-        # input_shape = (None, None, 3) if input_shape is None else input_shape
         imported_model = getattr(
             sm,
             self.architecture
         )
-        #TODO: Add an input_shape validation
-        print(input_shape)
         return imported_model(
             self.backbone,
             input_shape=(self.input_width, self.input_height, self.input_bands),
             encoder_weights='imagenet' if self.use_imagenet_weights else None,
-            encoder_freeze=encoder_freeze
+            encoder_freeze=encoder_freeze,
+            classes=n_classes
         )
 
 
