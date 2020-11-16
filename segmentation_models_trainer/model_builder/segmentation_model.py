@@ -35,6 +35,9 @@ class SegmentationModel(JsonSchemaMixin):
     architecture: str
     activation: str = 'sigmoid'
     use_imagenet_weights: bool = True
+    input_width: any = None
+    input_height: any = None
+    input_bands: any = None
     # config: dict = {}
 
     def __post_init__(self):
@@ -60,7 +63,9 @@ class SegmentationModel(JsonSchemaMixin):
         Returns:
             [KerasModel]: Keras model implemented using either the 
             segmentation_model lib or custom architectures.
-        """        
+        """
+        if self.input_width is not None or self.input_height is not None or self.input_bands is not None:
+            input_shape = (self.input_width, self.input_height, self.input_bands)
         # input_shape = (None, None, 3) if input_shape is None else input_shape
         imported_model = getattr(
             sm,
