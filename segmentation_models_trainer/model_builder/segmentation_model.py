@@ -35,7 +35,7 @@ class SegmentationModel(JsonSchemaMixin):
     architecture: str
     activation: str = 'sigmoid'
     use_imagenet_weights: bool = True
-    config: dict = {}
+    # config: dict = {}
 
     def __post_init__(self):
         if self.architecture not in ['Unet', 'PSPNet', 'FPN', 'Linknet', 'custom']:
