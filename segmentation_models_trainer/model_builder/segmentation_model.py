@@ -61,7 +61,7 @@ class SegmentationModel(JsonSchemaMixin):
             [KerasModel]: Keras model implemented using either the 
             segmentation_model lib or custom architectures.
         """        
-        input_shape = (None, None, 3) if input_shape is None else input_shape
+        # input_shape = (None, None, 3) if input_shape is None else input_shape
         imported_model = getattr(
             sm,
             self.architecture
