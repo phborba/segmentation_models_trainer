@@ -153,7 +153,7 @@ class ImageHistory(tf.keras.callbacks.Callback):
         data = np.concatenate(
             (
                 predicted_images.squeeze(),
-                ref_labels
+                ref_labels.squeeze()
             ),
             axis=1
         )
