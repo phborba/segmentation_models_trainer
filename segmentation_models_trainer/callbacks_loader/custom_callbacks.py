@@ -162,7 +162,7 @@ class ImageHistory(tf.keras.callbacks.Callback):
     
     def _wrap_pltfn(self, plt_fn):
         def plot(*args):
-            fig = plt.figure(figsize=(10, 20))
+            fig = plt.figure(figsize=(15, 15))
             *params, batch_size, current_page, report_path = args
             fig, axs = plt.subplots(
                 nrows=batch_size.numpy(),

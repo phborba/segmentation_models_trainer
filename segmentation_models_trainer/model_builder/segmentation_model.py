@@ -35,9 +35,9 @@ class SegmentationModel(JsonSchemaMixin):
     architecture: str
     activation: str = 'sigmoid'
     use_imagenet_weights: bool = True
-    input_width: any = None
-    input_height: any = None
-    input_bands: int = 3
+    input_width: Any = None
+    input_height: Any = None
+    input_bands: Any = None
     # config: dict = {}
 
     def __post_init__(self):
