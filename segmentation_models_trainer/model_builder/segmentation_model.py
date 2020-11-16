@@ -35,6 +35,7 @@ class SegmentationModel(JsonSchemaMixin):
     architecture: str
     activation: str = 'sigmoid'
     use_imagenet_weights: bool = True
+    config: dict = {}
 
     def __post_init__(self):
         if self.architecture not in ['Unet', 'PSPNet', 'FPN', 'Linknet', 'custom']:
@@ -62,15 +63,22 @@ class SegmentationModel(JsonSchemaMixin):
         """        
         input_shape = (None, None, 3) if input_shape is None else input_shape
         imported_model = getattr(
-            sm, 
+            sm,
             self.architecture
         )
+        #TODO: Add an input_shape validation
         return imported_model(
             self.backbone,
             input_shape=input_shape,
             encoder_weights='imagenet' if self.use_imagenet_weights else None,
             encoder_freeze=encoder_freeze
-        )
+        ) if input_shape is not None else \
+            imported_model(
+                self.backbone,
+                encoder_weights='imagenet' if self.use_imagenet_weights else None,
+                encoder_freeze=encoder_freeze
+            )
+
 
 if __name__ == '__main__':
     x = SegmentationModel.from_dict(
