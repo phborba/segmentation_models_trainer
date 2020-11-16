@@ -64,7 +64,7 @@ class Experiment(JsonSchemaMixin):
         self.BATCH_SIZE = self.hyperparameters.batch_size * strategy.num_replicas_in_sync \
             if self.use_multiple_gpus else self.hyperparameters.batch_size
         n_classes = self.train_dataset.n_classes
-        input_shape = self.train_dataset.get_img_input_shape()
+        # input_shape = self.train_dataset.get_img_input_shape()
         
         train_ds = self.train_dataset.get_tf_dataset(self.BATCH_SIZE)
         test_ds = self.test_dataset.get_tf_dataset(self.BATCH_SIZE)
@@ -76,8 +76,7 @@ class Experiment(JsonSchemaMixin):
             with strategy.scope():
                 model = self.model.get_model(
                     n_classes,
-                    encoder_freeze=encoder_freeze,
-                    input_shape=input_shape
+                    encoder_freeze=encoder_freeze
                 )
                 opt = self.hyperparameters.optimizer.tf_object
                 metric_list = self.metrics.get_tf_objects()
