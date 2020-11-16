@@ -72,6 +72,7 @@ class SegmentationModel(JsonSchemaMixin):
             self.architecture
         )
         #TODO: Add an input_shape validation
+        print(input_shape)
         return imported_model(
             self.backbone,
             input_shape=input_shape,
