@@ -170,8 +170,9 @@ class ImageHistory(tf.keras.callbacks.Callback):
                 figsize=(10, 20),
                 subplot_kw={'xticks': [], 'yticks': []}
             )
-            arg_list = [fig, axs, current_page, report_path] + params
+            arg_list = [fig, axs, current_page] + params
             plt_fn(*arg_list)
+            self.save_plot(plt, report_path)
             buf = io.BytesIO()
             plt.savefig(
                 buf,
@@ -189,7 +190,13 @@ class ImageHistory(tf.keras.callbacks.Callback):
             return im
         return plot
     
-def display_predictions(plt, axs, page_number, report_path, sample_image, sample_mask, predicted_mask):
+    def save_plot(self, plt, report_path):
+        plt.savefig(
+            report_path,
+            format='png'
+        )
+    
+def display_predictions(plt, axs, page_number, sample_image, sample_mask, predicted_mask):
     for i in range(len(sample_image)):
         axs[i][0].imshow(
             tf.keras.preprocessing.image.array_to_img(
@@ -222,7 +229,3 @@ def display_predictions(plt, axs, page_number, report_path, sample_image, sample
             )
         )
     plt.tight_layout()
-    plt.savefig(
-        report_path,
-        format='png'
-    )
