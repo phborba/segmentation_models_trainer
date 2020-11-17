@@ -107,9 +107,8 @@ class ImageHistory(tf.keras.callbacks.Callback):
         )[0]
         #took one batch
         y_pred = self.model.predict(image_data)
-        for i in range(self.page_size):
-            predicted_images.append(y_pred[i])
-            ref_labels.append(label_data[i])
+        predicted_images.append(y_pred)
+        ref_labels.append(label_data)
         
         predicted_images = np.concatenate(
             predicted_images,
