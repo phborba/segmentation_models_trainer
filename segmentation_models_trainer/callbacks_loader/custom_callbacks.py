@@ -139,7 +139,7 @@ class ImageHistory(tf.keras.callbacks.Callback):
                 figsize=(20, 100),
                 subplot_kw={'xticks': [], 'yticks': []}
             )
-            arg_list = [fig, axs] + args
+            arg_list = [fig, axs] + list(args)
             plt_fn(*arg_list)
             self.save_plot(plt)
             buf = io.BytesIO()
