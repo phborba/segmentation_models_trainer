@@ -134,7 +134,7 @@ class ImageHistory(tf.keras.callbacks.Callback):
         def plot(*args):
             fig = plt.figure(figsize=(15, 15))
             fig, axs = plt.subplots(
-                nrows=self.page_size+1,
+                nrows=self.page_size,
                 ncols=3,
                 figsize=(20, 100),
                 subplot_kw={'xticks': [], 'yticks': []}
@@ -174,7 +174,7 @@ class ImageHistory(tf.keras.callbacks.Callback):
     
 def display_predictions(plt, axs, *arg):
     sample_image, sample_mask, predicted_mask  = arg
-    for i in range(len(sample_image)):
+    for i in range(len(sample_image)-1):
         axs[i][0].imshow(
             tf.keras.preprocessing.image.array_to_img(
                 sample_image[i]
