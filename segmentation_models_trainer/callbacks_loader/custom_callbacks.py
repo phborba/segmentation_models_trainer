@@ -71,53 +71,33 @@ class ImageHistory(tf.keras.callbacks.Callback):
         file_writer = tf.summary.create_file_writer(
             self.tensorboard_dir
         )
-        self.n_pages = np.ceil(
-            self.batch_size / self.page_size
-        ) + 1
-        for p, params in enumerate(
-            zip_longest(
-                chunks(image_data, int(self.n_pages)),
-                chunks(label_data, int(self.n_pages)),
-                chunks(y_pred, int(self.n_pages)),
-                fillvalue=None
+        args = image_data, label_data, y_pred
+        image_tensor = tf.py_function(
+            self._wrap_pltfn(
+                display_predictions
+            ),
+            args,
+            tf.uint8
+        )
+        image_tensor.set_shape(
+            [None, None, 4]
+        )
+        with file_writer.as_default():
+            tf.summary.image(
+                'epoch',
+                data,
+                step=self.last_epoch
             )
-        ):
-            chunk_image_data, chunk_label_data, chunk_y_pred = params
-            args = [
-                list(chunk_image_data),
-                list(chunk_label_data),
-                list(chunk_y_pred),
-                self.batch_size,
-                p
-            ]
-            if any(i is None for i in args):
-                break
-            image_tensor = tf.py_function(
-                self._wrap_pltfn(
-                    display_predictions
+            tf.summary.image(
+                'Ground Truth and Prediction Comparison Page {page}/{n_pages}'.format(
+                    page=p,
+                    n_pages=self.n_pages
                 ),
-                args,
-                tf.uint8
+                tf.expand_dims(image_tensor, 0),
+                step=self.last_epoch
             )
-            image_tensor.set_shape(
-                [None, None, 4]
-            )
-            with file_writer.as_default():
-                tf.summary.image(
-                    'epoch',
-                    data,
-                    step=self.last_epoch
-                )
-                tf.summary.image(
-                    'Ground Truth and Prediction Comparison Page {page}/{n_pages}'.format(
-                        page=p,
-                        n_pages=self.n_pages
-                    ),
-                    tf.expand_dims(image_tensor, 0),
-                    step=self.last_epoch
-                )
-                tf.summary.flush()
-            image_tensor = None
+            tf.summary.flush()
+        image_tensor = None
         return
     
     def predict_data(self):
@@ -128,17 +108,18 @@ class ImageHistory(tf.keras.callbacks.Callback):
         )[0]
         #took one batch
         y_pred = self.model.predict(image_data)
-        predicted_images.append(y_pred)
-        ref_labels.append(label_data)
+        for i in range(self.page_size):
+            predicted_images.append(y_pred[i])
+            ref_labels.append(label_data[i])
         
-        predicted_images = np.concatenate(
-            predicted_images,
-            axis=2
-        )
-        ref_labels = np.concatenate(
-            ref_labels,
-            axis=2
-        )
+        # predicted_images = np.concatenate(
+        #     predicted_images,
+        #     axis=2
+        # )
+        # ref_labels = np.concatenate(
+        #     ref_labels,
+        #     axis=2
+        # )
 
         data = np.concatenate(
             (
@@ -153,16 +134,16 @@ class ImageHistory(tf.keras.callbacks.Callback):
     def _wrap_pltfn(self, plt_fn):
         def plot(*args):
             fig = plt.figure(figsize=(15, 15))
-            *params, batch_size, current_page = args
+            *params = args
             fig, axs = plt.subplots(
-                nrows=batch_size.numpy(),
+                nrows=self.page_size,
                 ncols=3,
                 figsize=(20, 100),
                 subplot_kw={'xticks': [], 'yticks': []}
             )
-            arg_list = [fig, axs, current_page] + params
+            arg_list = [fig, axs] + params
             plt_fn(*arg_list)
-            self.save_plot(plt, current_page, self.n_pages)
+            self.save_plot(plt)
             buf = io.BytesIO()
             plt.savefig(
                 buf,
@@ -180,14 +161,12 @@ class ImageHistory(tf.keras.callbacks.Callback):
             return im
         return plot
     
-    def save_plot(self, plt, p, n_pages):
+    def save_plot(self, plt):
         report_path = os.path.join(
             self.report_dir ,
-            'report_epoch_{epoch}_{page}-{n_pages}_{date}.png'.format(
+            'report_epoch_{epoch}_{date}.png'.format(
                 date=datetime.datetime.now().strftime("%Y%m%d-%H%M%S"),
-                epoch=self.last_epoch,
-                page=p,
-                n_pages=n_pages
+                epoch=self.last_epoch
             )
         )
         plt.savefig(
@@ -205,7 +184,7 @@ def display_predictions(plt, axs, *arg):
         )
         axs[i][0].set_title(
             "Image {n}".format(
-                n=page_number+i+1
+                n=i+1
             )
         )
         axs[i][1].imshow(
@@ -215,7 +194,7 @@ def display_predictions(plt, axs, *arg):
         )
         axs[i][1].set_title(
             "Ground Truth {n}".format(
-                n=page_number+i+1
+                n=i+1
             )
         )
         axs[i][2].imshow(
@@ -225,7 +204,7 @@ def display_predictions(plt, axs, *arg):
         )
         axs[i][2].set_title(
             "Predicted {n}".format(
-                n=page_number+i+1
+                n=i+1
             )
         )
     plt.tight_layout()
