@@ -171,7 +171,7 @@ class Experiment(JsonSchemaMixin):
                         'dataset' : data_ds,
                         'tensorboard_dir' : self.LOG_PATH,
                         'n_epochs' : epochs,
-                        'batch_size' : self.BATCH_SIZE,
+                        'batch_size' : self.hyperparameters.batch_size,
                         'report_dir' : self.REPORT_DIR
                     }
                 )
