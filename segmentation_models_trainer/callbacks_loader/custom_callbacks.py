@@ -173,7 +173,7 @@ class ImageHistory(tf.keras.callbacks.Callback):
         )
     
 def display_predictions(plt, axs, *arg):
-    page_number, sample_image, sample_mask, predicted_mask  = arg
+    sample_image, sample_mask, predicted_mask  = arg
     for i in range(len(sample_image)):
         axs[i][0].imshow(
             tf.keras.preprocessing.image.array_to_img(
