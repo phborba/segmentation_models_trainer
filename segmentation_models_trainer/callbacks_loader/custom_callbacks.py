@@ -71,34 +71,24 @@ class ImageHistory(tf.keras.callbacks.Callback):
         file_writer = tf.summary.create_file_writer(
             self.tensorboard_dir
         )
-        n_pages = np.ceil(
+        self.n_pages = np.ceil(
             self.batch_size / self.page_size
         ) + 1
         for p, params in enumerate(
             zip_longest(
-                chunks(image_data, int(n_pages)),
-                chunks(label_data, int(n_pages)),
-                chunks(y_pred, int(n_pages)),
+                chunks(image_data, int(self.n_pages)),
+                chunks(label_data, int(self.n_pages)),
+                chunks(y_pred, int(self.n_pages)),
                 fillvalue=None
             )
         ):
             chunk_image_data, chunk_label_data, chunk_y_pred = params
-            current_report_path = os.path.join(
-                self.report_dir ,
-                'report_epoch_{epoch}_{page}-{n_pages}_{date}.png'.format(
-                    date=datetime.datetime.now().strftime("%Y%m%d-%H%M%S"),
-                    epoch=self.last_epoch,
-                    page=p,
-                    n_pages=n_pages
-                )
-            )
             args = [
                 list(chunk_image_data),
                 list(chunk_label_data),
                 list(chunk_y_pred),
                 self.batch_size,
-                p,
-                current_report_path
+                p
             ]
             if any(i is None for i in args):
                 break
@@ -153,7 +143,7 @@ class ImageHistory(tf.keras.callbacks.Callback):
         data = np.concatenate(
             (
                 predicted_images.squeeze(),
-                ref_labels
+                ref_labels.squeeze()
             ),
             axis=1
         )
@@ -163,7 +153,7 @@ class ImageHistory(tf.keras.callbacks.Callback):
     def _wrap_pltfn(self, plt_fn):
         def plot(*args):
             fig = plt.figure(figsize=(15, 15))
-            *params, batch_size, current_page, report_path = args
+            *params, batch_size, current_page = args
             fig, axs = plt.subplots(
                 nrows=batch_size.numpy(),
                 ncols=3,
@@ -172,7 +162,7 @@ class ImageHistory(tf.keras.callbacks.Callback):
             )
             arg_list = [fig, axs, current_page] + params
             plt_fn(*arg_list)
-            self.save_plot(plt, report_path)
+            self.save_plot(plt, current_page, self.n_pages)
             buf = io.BytesIO()
             plt.savefig(
                 buf,
@@ -190,9 +180,18 @@ class ImageHistory(tf.keras.callbacks.Callback):
             return im
         return plot
     
-    def save_plot(self, plt, report_path):
+    def save_plot(self, plt, p, n_pages):
+        report_path = os.path.join(
+            self.report_dir ,
+            'report_epoch_{epoch}_{page}-{n_pages}_{date}.png'.format(
+                date=datetime.datetime.now().strftime("%Y%m%d-%H%M%S"),
+                epoch=self.last_epoch,
+                page=p,
+                n_pages=n_pages
+            )
+        )
         plt.savefig(
-            report_path.numpy(),
+            report_path,
             format='png'
         )
     
