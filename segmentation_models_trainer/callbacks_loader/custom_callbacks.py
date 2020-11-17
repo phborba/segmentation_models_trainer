@@ -111,14 +111,14 @@ class ImageHistory(tf.keras.callbacks.Callback):
             predicted_images.append(y_pred[i])
             ref_labels.append(label_data[i])
         
-        # predicted_images = np.concatenate(
-        #     predicted_images,
-        #     axis=2
-        # )
-        # ref_labels = np.concatenate(
-        #     ref_labels,
-        #     axis=2
-        # )
+        predicted_images = np.concatenate(
+            predicted_images,
+            axis=2
+        )
+        ref_labels = np.concatenate(
+            ref_labels,
+            axis=2
+        )
 
         data = np.concatenate(
             (
