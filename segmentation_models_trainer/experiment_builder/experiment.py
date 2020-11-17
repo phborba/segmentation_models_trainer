@@ -128,7 +128,7 @@ class Experiment(JsonSchemaMixin):
         )
         callback_list = self.get_initialized_callbacks(
             epochs=self.warmup_epochs,
-            data_ds=train_ds,
+            data_ds=test_ds,
             warmup=False
         )
         model = train_model(

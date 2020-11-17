@@ -155,7 +155,7 @@ class ImageHistory(tf.keras.callbacks.Callback):
             fig = plt.figure(figsize=(15, 15))
             *params, batch_size, current_page = args
             fig, axs = plt.subplots(
-                nrows=batch_size.numpy(),
+                nrows=self.page_size,
                 ncols=3,
                 figsize=(20, 100),
                 subplot_kw={'xticks': [], 'yticks': []}
