@@ -90,7 +90,7 @@ class ImageHistory(tf.keras.callbacks.Callback):
             )
             tf.summary.image(
                 'Ground Truth and Prediction Comparison for {n_images} images'.format(
-                    n_images=self.n_pages
+                    n_images=self.page_size
                 ),
                 tf.expand_dims(image_tensor, 0),
                 step=self.last_epoch
