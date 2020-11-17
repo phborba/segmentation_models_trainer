@@ -153,11 +153,12 @@ class ImageHistory(tf.keras.callbacks.Callback):
     def _wrap_pltfn(self, plt_fn):
         def plot(*args):
             fig = plt.figure(figsize=(15, 15))
+            gs = fig.add_gridspec(1, 3)
             *params, batch_size, current_page = args
             fig, axs = plt.subplots(
                 nrows=batch_size.numpy(),
                 ncols=3,
-                figsize=(10, 20),
+                figsize=(20, 100),
                 subplot_kw={'xticks': [], 'yticks': []}
             )
             arg_list = [fig, axs, current_page] + params
