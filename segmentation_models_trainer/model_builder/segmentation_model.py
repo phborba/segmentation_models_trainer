@@ -41,7 +41,7 @@ class SegmentationModel(JsonSchemaMixin):
     # config: dict = {}
 
     def __post_init__(self):
-        if self.architecture not in ['Unet', 'PSPNet', 'FPN', 'Linknet', 'custom']:
+        if self.architecture not in ['Unet', 'PSPNet', 'FPN', 'Linknet', 'DeepLabV3Plus', 'custom']:
             raise ValueError("Architecture not implemented")
         if self.backbone != 'custom' and \
             self.backbone not in sm.get_available_backbone_names():
