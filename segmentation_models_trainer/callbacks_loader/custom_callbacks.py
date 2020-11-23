@@ -30,7 +30,7 @@ from tensorflow.python.util.tf_export import keras_export
 from itertools import zip_longest
 from itertools import groupby, count
 
-__all__ = 'ImageHistory, LearningRateLoggingCallback',
+__all__ = ['ImageHistory', 'LearningRateLoggingCallback', ]
 
 def chunks(iterable, size):
     c = count()
