@@ -147,8 +147,11 @@ class Experiment(JsonSchemaMixin):
         self.TEST_CACHE = self.test_and_create_folder(
             os.path.join(DATA_DIR, 'cache', 'train_cache')
         )
+        self.WARMUP_LOG_PATH = self.test_and_create_folder(
+            os.path.join(DATA_DIR, 'warmup', 'logs', 'scalars')
+        )
         self.LOG_PATH = self.test_and_create_folder(
-            os.path.join(DATA_DIR, 'logs', 'scalars')
+            os.path.join(DATA_DIR, 'training', 'logs', 'scalars')
         )
         self.CHECKPOINT_PATH = self.test_and_create_folder(
             os.path.join(DATA_DIR, 'logs', 'checkpoints')
@@ -169,7 +172,7 @@ class Experiment(JsonSchemaMixin):
                 callback.config.update(
                     {
                         'dataset' : data_ds,
-                        'tensorboard_dir' : self.LOG_PATH,
+                        'tensorboard_dir' : self.WARMUP_LOG_PATH if warmup else self.LOG_PATH,
                         'n_epochs' : epochs,
                         'batch_size' : self.hyperparameters.batch_size,
                         'report_dir' : self.REPORT_DIR
@@ -188,13 +191,19 @@ class Experiment(JsonSchemaMixin):
             elif callback.name == 'TensorBoard':
                 callback.config.update(
                     {
-                        'log_dir' : self.LOG_PATH
+                        'log_dir' : self.WARMUP_LOG_PATH if warmup else self.LOG_PATH
                     }
                 )
             elif callback.name == 'CSVLogger':
                 callback.config.update(
                     {
-                        'filename' : os.path.join(self.LOG_PATH, 'metrics_per_epoch.log'),
+                        'filename' : os.path.join(
+                            self.WARMUP_LOG_PATH,
+                            'warmup_metrics_per_epoch.log'
+                        ) if warmup else os.path.join(
+                            self.LOG_PATH,
+                            'metrics_per_epoch.log'
+                        ),
                         'separator' : ';',
                         'append' : True
                     }
