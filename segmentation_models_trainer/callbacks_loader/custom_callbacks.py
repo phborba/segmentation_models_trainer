@@ -30,12 +30,17 @@ from tensorflow.python.util.tf_export import keras_export
 from itertools import zip_longest
 from itertools import groupby, count
 
-__all__ = 'ImageHistory',
+__all__ = 'ImageHistory, LearningRateLoggingCallback',
 
 def chunks(iterable, size):
     c = count()
     for _, g in groupby(iterable, lambda _: next(c)//size):
         yield g
+
+class LearningRateLoggingCallback(tf.keras.callbacks.Callback):
+    def on_epoch_end(self, epoch):
+        lr = self.model.optimizer.lr
+        tf.summary.scalar('learning rate', data=lr, step=epoch)
 
 class ImageHistory(tf.keras.callbacks.Callback):
 

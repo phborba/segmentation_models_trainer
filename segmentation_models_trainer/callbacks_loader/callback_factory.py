@@ -64,6 +64,10 @@ class CallbackFactory:
             return tf.keras.callbacks.CSVLogger(
                 **parameters
             )
+        if name == 'LearningRateLoggingCallback':
+            return smt.callbacks_loader.custom_callbacks.LearningRateLoggingCallback(
+                parameters
+            )
 
 if __name__ == '__main__':
     img_callback = CallbackFactory.get_callback(
