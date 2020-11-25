@@ -132,7 +132,7 @@ class Dataset(JsonSchemaMixin):
     shuffle_buffer_size: int = 10000
     shuffle_csv: bool = True
     ignore_errors: bool = True
-    num_paralel_reads: int = 4
+    num_paralel_reads: int = 1
     img_dtype: str = 'float32'
     img_format: str = 'png'
     img_width: int = 512
