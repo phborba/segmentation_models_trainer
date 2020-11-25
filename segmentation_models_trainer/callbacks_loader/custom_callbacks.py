@@ -39,12 +39,12 @@ def chunks(iterable, size):
         yield g
 
 class LearningRateLoggingCallback(tf.keras.callbacks.Callback):
-    def on_epoch_end(self, epoch):
+    def on_epoch_end(self, epoch, logs=None):
         lr = self.model.optimizer.lr
         tf.summary.scalar('learning rate', data=lr, step=epoch)
 
 class GarbageCollectorCallback(tf.keras.callbacks.Callback):
-    def on_epoch_end(self, epoch):
+    def on_epoch_end(self, epoch, logs=None):
         gc.collect()
 
 class ImageHistory(tf.keras.callbacks.Callback):
