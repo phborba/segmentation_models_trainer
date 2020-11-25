@@ -120,6 +120,7 @@ class ImageHistory(tf.keras.callbacks.Callback):
             )
             tf.summary.flush()
         image_tensor = None
+        gc.collect()
         return
     
     def predict_data(self):

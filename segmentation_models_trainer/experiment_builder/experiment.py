@@ -22,6 +22,7 @@ import tensorflow as tf
 import segmentation_models as sm
 import os
 import numpy as np
+import gc
 import importlib
 from typing import Any, List
 from dataclasses import dataclass
@@ -114,12 +115,13 @@ class Experiment(JsonSchemaMixin):
                 data_ds=test_ds,
                 warmup=True
             )
-            model = train_model(
+            train_model(
                 epochs=self.warmup_epochs,
                 save_weights_path=warmup_path,
                 encoder_freeze=True,
                 callback_list=callback_list
             )
+            gc.collect()
         final_save_path = os.path.join(
             self.SAVE_PATH,
             'experiment_{name}_{epochs}_epochs.h5'.format(
@@ -128,7 +130,7 @@ class Experiment(JsonSchemaMixin):
             )
         )
         callback_list = self.get_initialized_callbacks(
-            epochs=self.warmup_epochs,
+            epochs=self.epochs,
             data_ds=test_ds,
             warmup=False
         )
