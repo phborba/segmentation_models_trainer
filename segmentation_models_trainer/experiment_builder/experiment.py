@@ -102,12 +102,13 @@ class Experiment(JsonSchemaMixin):
                 save_weights_path
             )
             return model
-
-        if self.warmup_epochs > 0:
-            warmup_path = os.path.join(
+        
+        warmup_path = os.path.join(
                 self.SAVE_PATH,
                 'warmup_experiment_{name}.h5'.format(name=self.name)
             )
+
+        if self.warmup_epochs > 0 and not os.path.exists(warmup_path):
             callback_list = self.get_initialized_callbacks(
                 epochs=self.warmup_epochs,
                 data_ds=train_ds,
