@@ -111,7 +111,7 @@ class Experiment(JsonSchemaMixin):
         if self.warmup_epochs > 0 and not os.path.exists(warmup_path):
             callback_list = self.get_initialized_callbacks(
                 epochs=self.warmup_epochs,
-                data_ds=train_ds,
+                data_ds=test_ds,
                 warmup=True
             )
             model = train_model(

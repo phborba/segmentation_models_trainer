@@ -26,6 +26,7 @@ import datetime
 import os
 import matplotlib
 import matplotlib.pyplot as plt
+import gc
 from tensorflow.python.util.tf_export import keras_export
 from itertools import zip_longest
 from itertools import groupby, count
@@ -41,6 +42,10 @@ class LearningRateLoggingCallback(tf.keras.callbacks.Callback):
     def on_epoch_end(self, epoch):
         lr = self.model.optimizer.lr
         tf.summary.scalar('learning rate', data=lr, step=epoch)
+
+class GarbageCollectorCallback(tf.keras.callbacks.Callback):
+    def on_epoch_end(self, epoch):
+        gc.collect()
 
 class ImageHistory(tf.keras.callbacks.Callback):
 
