@@ -68,6 +68,10 @@ class CallbackFactory:
             return smt.callbacks_loader.custom_callbacks.LearningRateLoggingCallback(
                 parameters
             )
+        if name == 'GarbageCollectorCallback':
+            return smt.callbacks_loader.custom_callbacks.GarbageCollectorCallback(
+                parameters
+            )
 
 if __name__ == '__main__':
     img_callback = CallbackFactory.get_callback(
