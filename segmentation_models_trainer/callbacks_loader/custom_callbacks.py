@@ -76,21 +76,8 @@ class ImageHistory(tf.keras.callbacks.Callback):
         self.my_logs = logs or {}
         self.last_epoch = epoch
 
-        # image_data, label_data, y_pred, data = self.predict_data()
-        predicted_images = []
-        ref_labels = []
-        image_data, label_data = list(self.dataset.take(1))[0]
-        label_data = label_data
-        #took one batch
-        y_pred = self.model.predict(image_data)
-        predicted_images.append(y_pred)
-        ref_labels.append(label_data)
+        image_data, label_data, y_pred, data = self.predict_data()
         
-        predicted_images = np.concatenate(predicted_images,axis=2)
-        ref_labels = np.concatenate(ref_labels,axis=2)
-        data = np.concatenate((predicted_images,ref_labels), axis=1)
-        params = (image_data, label_data, y_pred)
-
         file_writer = tf.summary.create_file_writer(
             self.tensorboard_dir
         )
